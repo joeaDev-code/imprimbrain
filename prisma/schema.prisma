@@ -1,0 +1,294 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  OFFICER
+  SECRETARY
+}
+
+enum OrderStatus {
+  PENDING
+  IN_PROGRESS
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CASH
+  ORANGE_MONEY
+  MTN_MONEY
+  MOOV_MONEY
+  WAVE
+  CARD
+  OTHER
+}
+
+enum StockMovementKind {
+  IN
+  OUT
+  ADJUSTMENT
+}
+
+enum Permission {
+  DASHBOARD_VIEW
+  CLIENTS_VIEW
+  CLIENTS_CREATE
+  CLIENTS_UPDATE
+  CLIENTS_DELETE
+  SERVICES_VIEW
+  SERVICES_CREATE
+  SERVICES_UPDATE
+  SERVICES_DELETE
+  ORDERS_VIEW
+  ORDERS_CREATE
+  ORDERS_UPDATE
+  ORDERS_CANCEL
+  PAYMENTS_VIEW
+  PAYMENTS_CREATE
+  EXPENSES_VIEW
+  EXPENSES_CREATE
+  EXPENSES_UPDATE
+  STOCK_VIEW
+  STOCK_CREATE
+  STOCK_UPDATE
+  STOCK_ADJUST
+  STOCK_RESTOCK
+  EMPLOYEES_VIEW
+  EMPLOYEES_CREATE
+  EMPLOYEES_UPDATE
+  EMPLOYEES_DISABLE
+  SETTINGS_VIEW
+  SETTINGS_UPDATE
+  AUDIT_VIEW
+}
+
+model Organization {
+  id               String      @id @default(uuid()) @db.Uuid
+  name             String
+  slug             String      @unique
+  phoneEncrypted   String?
+  phoneBlindIndex  String?
+  emailEncrypted   String?
+  emailBlindIndex  String?
+  addressEncrypted String?
+  wrappedDataKey   String
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+  users            User[]
+  clients          Client[]
+  services         Service[]
+  stockItems       StockItem[]
+  orders           Order[]
+  expenses         Expense[]
+  auditLogs        AuditLog[]
+
+  @@index([slug])
+}
+
+model User {
+  id              String           @id @default(uuid()) @db.Uuid
+  organizationId  String?          @db.Uuid
+  organization    Organization?    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  email           String           @unique
+  name            String
+  passwordHash    String
+  role            Role             @default(SECRETARY)
+  active          Boolean          @default(true)
+  emailBlindIndex String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  sessions        Session[]
+  auditLogs       AuditLog[]
+  permissions     UserPermission[]
+
+  @@index([organizationId, role])
+  @@index([organizationId, emailBlindIndex])
+}
+
+model UserPermission {
+  id         String     @id @default(uuid()) @db.Uuid
+  userId     String     @db.Uuid
+  permission Permission
+  allowed    Boolean    @default(true)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, permission])
+}
+
+model Session {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId, expiresAt])
+}
+
+model Client {
+  id                 String       @id @default(uuid()) @db.Uuid
+  organizationId     String       @db.Uuid
+  organization       Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name               String
+  phoneEncrypted     String?
+  phoneBlindIndex    String?
+  whatsappEncrypted  String?
+  whatsappBlindIndex String?
+  emailEncrypted     String?
+  emailBlindIndex    String?
+  cityEncrypted      String?
+  notesEncrypted     String?
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+  orders             Order[]
+
+  @@index([organizationId, name])
+  @@index([organizationId, phoneBlindIndex])
+  @@index([organizationId, whatsappBlindIndex])
+}
+
+model Service {
+  id             String            @id @default(uuid()) @db.Uuid
+  organizationId String            @db.Uuid
+  organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String
+  category       String?
+  unit           String            @default("unité")
+  price          Decimal           @db.Decimal(14, 2)
+  active         Boolean           @default(true)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  rules          ConsumptionRule[]
+  orderLines     OrderLine[]
+
+  @@index([organizationId, name])
+}
+
+model StockItem {
+  id              String            @id @default(uuid()) @db.Uuid
+  organizationId  String            @db.Uuid
+  organization    Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name            String
+  barcode         String?
+  unit            String            @default("unité")
+  quantity        Decimal           @default(0) @db.Decimal(14, 3)
+  minThreshold    Decimal           @default(0) @db.Decimal(14, 3)
+  unitCost        Decimal           @default(0) @db.Decimal(14, 2)
+  packageUnit     String?
+  packageQuantity Decimal?          @db.Decimal(14, 3)
+  active          Boolean           @default(true)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  rules           ConsumptionRule[]
+  movements       StockMovement[]
+
+  @@unique([organizationId, barcode])
+  @@index([organizationId, name])
+}
+
+model ConsumptionRule {
+  id          String    @id @default(uuid()) @db.Uuid
+  serviceId   String    @db.Uuid
+  stockItemId String    @db.Uuid
+  qtyPerUnit  Decimal   @db.Decimal(14, 3)
+  service     Service   @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  stockItem   StockItem @relation(fields: [stockItemId], references: [id], onDelete: Cascade)
+
+  @@unique([serviceId, stockItemId])
+}
+
+model Order {
+  id             String          @id @default(uuid()) @db.Uuid
+  organizationId String          @db.Uuid
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  clientId       String?         @db.Uuid
+  client         Client?         @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  ref            String          @unique
+  status         OrderStatus     @default(PENDING)
+  total          Decimal         @default(0) @db.Decimal(14, 2)
+  notesEncrypted String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  lines          OrderLine[]
+  payments       Payment[]
+  stockMovements StockMovement[]
+
+  @@index([organizationId, createdAt])
+  @@index([organizationId, ref])
+}
+
+model OrderLine {
+  id        String   @id @default(uuid()) @db.Uuid
+  orderId   String   @db.Uuid
+  serviceId String?  @db.Uuid
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  service   Service? @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+  label     String
+  quantity  Decimal  @db.Decimal(14, 3)
+  unitPrice Decimal  @db.Decimal(14, 2)
+  total     Decimal  @db.Decimal(14, 2)
+}
+
+model Payment {
+  id      String        @id @default(uuid()) @db.Uuid
+  orderId String        @db.Uuid
+  order   Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  amount  Decimal       @db.Decimal(14, 2)
+  method  PaymentMethod @default(CASH)
+  paidAt  DateTime      @default(now())
+
+  @@index([orderId, paidAt])
+}
+
+model Expense {
+  id             String       @id @default(uuid()) @db.Uuid
+  organizationId String       @db.Uuid
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  label          String
+  category       String       @default("Divers")
+  amount         Decimal      @db.Decimal(14, 2)
+  spentAt        DateTime     @default(now())
+  notesEncrypted String?
+  createdAt      DateTime     @default(now())
+
+  @@index([organizationId, spentAt])
+}
+
+model StockMovement {
+  id          String            @id @default(uuid()) @db.Uuid
+  stockItemId String            @db.Uuid
+  stockItem   StockItem         @relation(fields: [stockItemId], references: [id], onDelete: Cascade)
+  orderId     String?           @db.Uuid
+  order       Order?            @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  kind        StockMovementKind
+  quantity    Decimal           @db.Decimal(14, 3)
+  reason      String?
+  createdAt   DateTime          @default(now())
+
+  @@index([stockItemId, createdAt])
+}
+
+model AuditLog {
+  id             String        @id @default(uuid()) @db.Uuid
+  organizationId String?       @db.Uuid
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  userId         String?       @db.Uuid
+  user           User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action         String
+  entity         String?
+  entityId       String?
+  metadata       Json?
+  createdAt      DateTime      @default(now())
+
+  @@index([organizationId, createdAt])
+  @@index([userId, createdAt])
+}

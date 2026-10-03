@@ -1,0 +1,75 @@
+### Imprim'Brain — Création d'un nouveau compte
+### À placer à la racine : create-account.http
+
+@baseUrl = http://localhost:3000
+@contentType = application/json
+
+### ============================================================
+### 1. CRÉER UN COMPTE
+### ============================================================
+
+POST {{baseUrl}}/api/auth/register
+Content-Type: {{contentType}}
+
+{
+  "name": "Jean Kouassi",
+  "email": "jean.kouassi@example.com",
+  "password": "ChangeMe123!",
+  "role": "OFFICER"
+}
+
+### ============================================================
+### 2. ADMIN
+### ============================================================
+
+# POST {{baseUrl}}/api/auth/register
+# Content-Type: {{contentType}}
+
+# {
+#   "name": "Administrateur",
+#   "email": "admin@example.com",
+#   "password": "ChangeMe123!",
+#   "role": "ADMIN"
+# }
+
+### ============================================================
+### 3. SECRÉTAIRE
+### ============================================================
+
+# POST {{baseUrl}}/api/auth/register
+# Content-Type: {{contentType}}
+
+# {
+#   "name": "Secrétaire",
+#   "email": "secretariat@example.com",
+#   "password": "ChangeMe123!",
+#   "role": "SECRETARY"
+# }
+
+### ============================================================
+### 4. OFFICIER
+### ============================================================
+
+# POST {{baseUrl}}/api/auth/register
+# Content-Type: {{contentType}}
+
+# {
+#   "name": "Agent Imprimerie",
+#   "email": "officer@example.com",
+#   "password": "ChangeMe123!",
+#   "role": "OFFICER"
+# }
+
+### ============================================================
+### 5. SUPER ADMIN
+### ============================================================
+
+POST {{baseUrl}}/api/auth/register
+ Content-Type: {{contentType}}
+
+ {
+   "name": "Super Administrateur",
+   "email": "superadmin@example.com",
+   "password": "ChangeMe123!",
+  "role": "SUPER_ADMIN"
+}

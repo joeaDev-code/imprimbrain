@@ -1,0 +1,2 @@
+import {NextResponse} from 'next/server';import {db} from '@/lib/prisma';import {requireOrgUser} from '@/lib/security';
+export async function GET(){try{const u=await requireOrgUser('AUDIT_VIEW');const rows=await db.auditLog.findMany({where:{organizationId:u.organizationId!},include:{user:{select:{name:true,email:true}}},orderBy:{createdAt:'desc'},take:500});return NextResponse.json(rows);}catch(e){return NextResponse.json({error:e instanceof Error?e.message:'Erreur'},{status:e instanceof Error&&e.message==='FORBIDDEN'?403:401});}}
