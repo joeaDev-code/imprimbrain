@@ -9,6 +9,7 @@
     "start": "next start",
     "lint": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
+    "test": "tsx --test tests/security.test.ts tests/ct-architecture.test.ts",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx scripts/seed.ts",
@@ -31,7 +32,8 @@
     "react-dom": "19.3.0",
     "sharp": "^0.35.5",
     "sonner": "^2.0.8",
-    "tailwindcss": "4.3.3"
+    "tailwindcss": "4.3.3",
+    "zustand": "^5.0.15"
   },
   "devDependencies": {
     "@types/node": "22.16.5",

@@ -52,7 +52,21 @@ export default function Login() {
         return;
       }
 
-      router.push("/admin");
+      const identityResponse = await fetch("/api/auth/me", { cache: "no-store" });
+      const identityData = await identityResponse.json().catch(() => null);
+      const authenticatedUser = identityData?.user;
+      if (!identityResponse.ok || !authenticatedUser) {
+        throw new Error("Connexion établie mais identité impossible à vérifier.");
+      }
+
+      if (authenticatedUser.role === "SUPER_ADMIN") {
+        router.replace("/super-admin");
+      } else if (["ADMIN", "OFFICER", "SECRETARY"].includes(authenticatedUser.role) && authenticatedUser.organizationId) {
+        router.replace(`/ct/${authenticatedUser.role.toLowerCase()}`);
+      } else {
+        await fetch("/api/auth/logout", { method: "POST" });
+        throw new Error("Ce compte n’est pas associé à un espace autorisé.");
+      }
       router.refresh();
     } catch {
       setError(

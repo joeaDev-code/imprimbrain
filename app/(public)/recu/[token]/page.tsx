@@ -11,6 +11,10 @@ type PublicReceiptPageProps = {
   }>;
 };
 
+export const metadata = {
+  robots: { index: false, follow: false, noarchive: true },
+};
+
 export default async function PublicReceiptPage({
   params,
 }: PublicReceiptPageProps) {
@@ -26,11 +30,19 @@ export default async function PublicReceiptPage({
     where: {
       id: orderId,
     },
-    include: {
-      organization: true,
-      client: true,
-      lines: true,
+    select: {
+      ref: true,
+      createdAt: true,
+      total: true,
+      organization: {
+        select: { id: true, name: true, phoneEncrypted: true, emailEncrypted: true, addressEncrypted: true },
+      },
+      client: { select: { name: true } },
+      lines: {
+        select: { label: true, quantity: true, unitPrice: true, total: true },
+      },
       payments: {
+        select: { amount: true, method: true, paidAt: true },
         orderBy: {
           paidAt: "asc",
         },
@@ -48,14 +60,7 @@ export default async function PublicReceiptPage({
     organization.id,
   );
 
-  const [
-    phone,
-    email,
-    address,
-    clientPhone,
-    clientWhatsapp,
-    clientEmail,
-  ] = await Promise.all([
+  const [phone, email, address] = await Promise.all([
     decrypt(
       organization.phoneEncrypted,
       key,
@@ -68,24 +73,6 @@ export default async function PublicReceiptPage({
       organization.addressEncrypted,
       key,
     ),
-    order.client
-      ? decrypt(
-          order.client.phoneEncrypted,
-          key,
-        )
-      : null,
-    order.client
-      ? decrypt(
-          order.client.whatsappEncrypted,
-          key,
-        )
-      : null,
-    order.client
-      ? decrypt(
-          order.client.emailEncrypted,
-          key,
-        )
-      : null,
   ]);
 
   const paid = order.payments.reduce(
@@ -122,14 +109,7 @@ export default async function PublicReceiptPage({
       address,
     },
 
-    client: {
-      name:
-        order.client?.name ||
-        "Client",
-      phone: clientPhone,
-      whatsapp: clientWhatsapp,
-      email: clientEmail,
-    },
+    client: { name: order.client?.name || "Client" },
 
     lines: order.lines.map((line) => ({
       service: line.label,

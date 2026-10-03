@@ -247,40 +247,41 @@ button {
 
 @media print {
 
-     @page {
-    size: A4;
-    margin: 12mm;
-  }
+    @page {
+        size: A4;
+        margin: 12mm;
+    }
 
-  html,
-  body {
-    background: white !important;
-  }
+    html,
+    body {
+        background: white !important;
+    }
 
-  body * {
-    visibility: hidden !important;
-  }
+    body * {
+        visibility: hidden !important;
+    }
 
-  #print-receipt,
-  #print-receipt * {
-    visibility: visible !important;
-  }
+    #print-receipt,
+    #print-receipt * {
+        visibility: visible !important;
+    }
 
-  #print-receipt {
-    position: absolute !important;
-    inset: 0 !important;
-    width: 100% !important;
-    max-width: none !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    border: 0 !important;
-    border-radius: 0 !important;
-    box-shadow: none !important;
-  }
+    #print-receipt {
+        position: absolute !important;
+        inset: 0 !important;
+        width: 100% !important;
+        max-width: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+    }
 
-  .print\:hidden {
-    display: none !important;
-  }
+    .print\:hidden {
+        display: none !important;
+    }
+
     body {
         background: #fff;
     }

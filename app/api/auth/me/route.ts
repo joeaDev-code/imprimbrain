@@ -1,2 +1,21 @@
-import {NextResponse} from 'next/server';import {currentUser} from '@/lib/security';
-export async function GET(){const u=await currentUser();return NextResponse.json({user:u?{id:u.id,name:u.name,email:u.email,role:u.role,organizationId:u.organizationId,permissions:u.permissions.map(p=>({permission:p.permission,allowed:p.allowed}))}:null});}
+import { NextResponse } from 'next/server';
+import { apiError } from '@/lib/api-error';
+import { currentUser } from '@/lib/security';
+
+export async function GET() {
+  try {
+    const user = await currentUser();
+    return NextResponse.json({
+      user: user ? {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        organizationId: user.organizationId,
+        permissions: user.permissions.map(({ permission, allowed }) => ({ permission, allowed })),
+      } : null,
+    });
+  } catch (error) {
+    return apiError(error);
+  }
+}

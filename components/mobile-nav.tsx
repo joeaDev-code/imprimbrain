@@ -22,7 +22,9 @@ export function MobileNav() {
   return (
     <nav className="fixed bottom-4 inset-x-4 z-40 md:hidden">
       <div className="flex items-center justify-around rounded-3xl border border-slate-200/80 bg-white/95 px-3 py-2 shadow-2xl backdrop-blur-xl">
-        {navItems.map(({ href, label, icon: Icon, isPrimary }) => {
+        {navItems.map((item) => {
+          const { href, label, icon: Icon } = item;
+          const isPrimary = "isPrimary" in item && item.isPrimary;
           const active =
             href === "/admin"
               ? pathname === "/admin"

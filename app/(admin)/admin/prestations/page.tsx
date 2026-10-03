@@ -15,7 +15,7 @@ import { requireOrgUser } from "@/lib/security";
 import { db } from "@/lib/prisma";
 import { fcfa } from "@/lib/money";
 
-export default async function Prestations() {
+export default async function Prestations({ baseHref = "/admin" }: { baseHref?: string } = {}) {
   const u = await requireOrgUser("ORDERS_VIEW");
 
   const rows = await db.order.findMany({
@@ -147,7 +147,7 @@ export default async function Prestations() {
         </div>
 
         <Link
-          href="/admin/prestations/nouveau"
+          href={`${baseHref}/prestations/nouveau`}
           className="inline-flex h-10 items-center gap-2 rounded-lg bg-cyan-500 px-4 text-[11px] font-bold text-white shadow-sm transition hover:bg-cyan-600"
         >
           <Plus size={16} />
@@ -306,7 +306,7 @@ export default async function Prestations() {
                     <td>
                       <div className="flex justify-end gap-1">
                         <Link
-                          href={`/admin/prestations/${order.id}/recu`}
+                          href={`${baseHref}/prestations/${order.id}/recu`}
                           title="Voir le reçu"
                           className="grid size-8 place-items-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-600"
                         >
@@ -314,7 +314,7 @@ export default async function Prestations() {
                         </Link>
 
                         <Link
-                          href={`/admin/prestations/${order.id}/recu`}
+                          href={`${baseHref}/prestations/${order.id}/recu`}
                           className="grid size-8 place-items-center rounded-lg border border-slate-200 bg-white text-slate-400 transition hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-600"
                         >
                           <ChevronRight size={14} />
@@ -344,7 +344,7 @@ export default async function Prestations() {
             </p>
 
             <Link
-              href="/admin/prestations/nouveau"
+              href={`${baseHref}/prestations/nouveau`}
               className="mt-4 inline-flex h-9 items-center gap-2 rounded-lg bg-cyan-500 px-4 text-[11px] font-bold text-white hover:bg-cyan-600"
             >
               <Plus size={15} />

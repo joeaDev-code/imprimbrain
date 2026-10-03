@@ -16,6 +16,8 @@ import {
 import { toast } from "sonner";
 import { PageHeader } from "@/components/page-header";
 import { fcfa } from "@/lib/money";
+import { ReceiptModal } from "@/components/receipt/receipt-modal";
+import type { ReceiptData } from "@/components/receipt/receipt.types";
 
 type Client = {
   id: string;
@@ -88,6 +90,8 @@ export default function NewOrder() {
   const [clientForm, setClientForm] =
     useState<NewClientForm>(emptyClient);
   const [loading, setLoading] = useState(true);
+  const [receiptData, setReceiptData] = useState<ReceiptData | null>(null);
+  const [receiptOpen, setReceiptOpen] = useState(false);
 
 
   useEffect(() => {
@@ -277,6 +281,23 @@ export default function NewOrder() {
     }
   }
 
+  async function loadReceipt(orderId: unknown) {
+    if (typeof orderId !== "string" || !orderId) {
+      throw new Error("La prestation a été créée mais son reçu est introuvable.");
+    }
+
+    const response = await fetch(`/api/receipts/${encodeURIComponent(orderId)}`, {
+      cache: "no-store",
+    });
+    const data = await response.json().catch(() => null);
+    if (!response.ok) {
+      throw new Error(data?.error || "Impossible de charger le reçu.");
+    }
+
+    setReceiptData(data as ReceiptData);
+    setReceiptOpen(true);
+  }
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
 
@@ -351,10 +372,7 @@ export default function NewOrder() {
        *
        * Le reçu s'ouvre directement dans le modal.
        */
-      await loadReceipt(
-        data?.id,
-        data?.reference,
-      );
+      await loadReceipt(data?.id);
     } catch (error) {
       toast.error(
         error instanceof Error
@@ -1126,6 +1144,14 @@ export default function NewOrder() {
             </form>
           </div>
         </div>
+      )}
+
+      {receiptData && (
+        <ReceiptModal
+          open={receiptOpen}
+          onClose={() => setReceiptOpen(false)}
+          data={receiptData}
+        />
       )}
     </>
   );

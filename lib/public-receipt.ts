@@ -22,7 +22,10 @@ function sign(value: string) {
 export function createPublicReceiptToken(
   orderId: string,
 ) {
-  const payload = Buffer.from(orderId).toString(
+  const payload = Buffer.from(JSON.stringify({
+    orderId,
+    expiresAt: Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60,
+  })).toString(
     "base64url",
   );
 
@@ -34,9 +37,9 @@ export function createPublicReceiptToken(
 export function verifyPublicReceiptToken(
   token: string,
 ) {
-  const [payload, signature] = token.split(".");
+  const [payload, signature, extra] = token.split(".");
 
-  if (!payload || !signature) {
+  if (!payload || !signature || extra) {
     return null;
   }
 
@@ -53,9 +56,22 @@ export function verifyPublicReceiptToken(
   }
 
   try {
-    return Buffer.from(payload, "base64url").toString(
-      "utf8",
+    const decoded: unknown = JSON.parse(
+      Buffer.from(payload, "base64url").toString("utf8"),
     );
+    if (
+      !decoded ||
+      typeof decoded !== "object" ||
+      !("orderId" in decoded) ||
+      typeof decoded.orderId !== "string" ||
+      !decoded.orderId ||
+      !("expiresAt" in decoded) ||
+      typeof decoded.expiresAt !== "number" ||
+      decoded.expiresAt <= Math.floor(Date.now() / 1000)
+    ) {
+      return null;
+    }
+    return decoded.orderId;
   } catch {
     return null;
   }

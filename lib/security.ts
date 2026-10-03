@@ -1,26 +1,17 @@
 import crypto from "node:crypto";
 import { cookies } from "next/headers";
 import { db } from "./prisma";
-import type { Permission, Role } from "@/generated/prisma/client";
+import type { Permission } from "@/generated/prisma/client";
+import { can, effectivePermissions } from "./permissions-policy";
+import { permissions } from "./permissions";
+import { isCTRole } from "./ct-access";
+
+export { can } from "./permissions-policy";
 
 const COOKIE = process.env.SESSION_COOKIE_NAME || "imprimbrain_session";
 const SESSION_HOURS = 12;
 const MASTER = process.env.MASTER_ENCRYPTION_KEY || "";
 const BLIND_MASTER = process.env.BLIND_INDEX_MASTER_KEY || "";
-
-const ROLE_DEFAULTS: Record<Role, Permission[]> = {
-  SUPER_ADMIN: [],
-  ADMIN: [],
-  OFFICER: [
-    "DASHBOARD_VIEW","CLIENTS_VIEW","CLIENTS_CREATE","CLIENTS_UPDATE",
-    "SERVICES_VIEW","ORDERS_VIEW","ORDERS_CREATE","ORDERS_UPDATE",
-    "PAYMENTS_VIEW","PAYMENTS_CREATE","STOCK_VIEW","STOCK_UPDATE","STOCK_RESTOCK"
-  ],
-  SECRETARY: [
-    "DASHBOARD_VIEW","CLIENTS_VIEW","CLIENTS_CREATE","CLIENTS_UPDATE",
-    "SERVICES_VIEW","ORDERS_VIEW","ORDERS_CREATE","PAYMENTS_VIEW","PAYMENTS_CREATE"
-  ],
-};
 
 function masterKey() {
   if (!/^[0-9a-fA-F]{64}$/.test(MASTER)) throw new Error("MASTER_ENCRYPTION_KEY must be 64 hexadecimal characters");
@@ -60,7 +51,7 @@ export function blindIndex(value: string | null | undefined, purpose: string, te
   if (!value) return null;
   if (!/^[0-9a-fA-F]{64}$/.test(BLIND_MASTER)) throw new Error("BLIND_INDEX_MASTER_KEY must be 64 hexadecimal characters");
   const normalized = normalizeForPurpose(value, purpose);
-  const key = crypto.hkdfSync("sha256", Buffer.from(BLIND_MASTER, "hex"), Buffer.from(tenantId), Buffer.from(`blind-index:${purpose}`), 32);
+  const key = Buffer.from(crypto.hkdfSync("sha256", Buffer.from(BLIND_MASTER, "hex"), Buffer.from(tenantId), Buffer.from(`blind-index:${purpose}`), 32));
   return crypto.createHmac("sha256", key).update(normalized, "utf8").digest("hex");
 }
 export function normalizeForPurpose(value: string, purpose: string) {
@@ -112,9 +103,28 @@ export async function requireOrgUser(permission?: Permission) {
   return user;
 }
 
-export function can(user: { role: Role; permissions?: { permission: Permission; allowed: boolean }[] }, permission: Permission) {
-  if (user.role === "SUPER_ADMIN" || user.role === "ADMIN") return user.permissions?.some((p) => p.permission === permission && !p.allowed) ? false : true;
-  const override = user.permissions?.find((p) => p.permission === permission);
-  if (override) return override.allowed;
-  return ROLE_DEFAULTS[user.role]?.includes(permission) ?? false;
+export async function requireCTUser() {
+  const user = await requireUser();
+  if (!isCTRole(user.role)) throw new Error(user.role === 'SUPER_ADMIN' ? 'SUPER_ADMIN_ONLY' : 'CT_ROLE_REQUIRED');
+  if (!user.organizationId) throw new Error('NO_ORGANIZATION');
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    organizationId: user.organizationId,
+    permissions: effectivePermissions(user, permissions),
+  };
+}
+
+export async function requireCTPermission(permission: Permission) {
+  const user = await requireCTUser();
+  if (!user.permissions.includes(permission)) throw new Error('FORBIDDEN');
+  return user;
+}
+
+export async function requireSuperAdmin() {
+  const user = await requireUser();
+  if (user.role !== 'SUPER_ADMIN') throw new Error('SUPER_ADMIN_ONLY');
+  return user;
 }

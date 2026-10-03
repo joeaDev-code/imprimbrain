@@ -13,6 +13,7 @@ import {
   Boxes,
   Sparkles,
 } from "lucide-react";
+import { legacyHrefInCTContext } from "@/lib/ct-links";
 
 export type UserType = {
   name?: string;
@@ -65,7 +66,7 @@ export function PageHeader({
   const pathname = usePathname();
   const router = useRouter();
 
-  const isSettings = pathname.startsWith("/admin/parametres");
+  const isSettings = pathname.startsWith("/admin/parametres") || pathname.includes("/parametres");
   const isProfile = pathname.startsWith("/admin/profil");
 
   async function logout() {
@@ -90,7 +91,11 @@ export function PageHeader({
         
         {/* Actions rapides - Défilement horizontal propre sans scrollbar visible */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1 lg:pb-0 [&::-webkit-scrollbar]:hidden [scrollbar-width:none] [-ms-overflow-style:none]">
-          {quickActions.map(({ href, label, icon: Icon, primary }) => (
+          {quickActions.map((item) => {
+            const { label, icon: Icon } = item;
+            const href = legacyHrefInCTContext(pathname, item.href);
+            const primary = "primary" in item && item.primary;
+            return (
             <Link
               key={href}
               href={href}
@@ -104,7 +109,8 @@ export function PageHeader({
               <Icon size={16} strokeWidth={primary ? 2.2 : 2} />
               <span>{label}</span>
             </Link>
-          ))}
+            );
+          })}
 
           {action && (
             <div className="ml-1 shrink-0 border-l border-slate-200 pl-3">
@@ -142,7 +148,7 @@ export function PageHeader({
 
           {/* Bouton Paramètres */}
           <Link
-            href="/admin/parametres"
+            href={legacyHrefInCTContext(pathname, "/admin/parametres")}
             title="Paramètres"
             className={[
               "grid size-10 place-items-center rounded-2xl border transition-all duration-200 active:scale-95",
