@@ -1,4 +1,4 @@
-export { default } from '@/components/modules/new-order-page';"use client";
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import {

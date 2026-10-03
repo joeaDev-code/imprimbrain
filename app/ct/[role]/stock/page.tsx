@@ -1,4 +1,4 @@
-import LegacyStock from '@/app/(admin)/admin/stock/page';
+import LegacyStock from '@/components/modules/stock-page';
 import { requireCTPagePermission } from '@/lib/ct-page';
 
 export default async function CTStockPage() {

@@ -1,4 +1,4 @@
-import LegacyServices from '@/app/(admin)/admin/services/page';
+import LegacyServices from '@/components/modules/services-page';
 import { requireCTPagePermission } from '@/lib/ct-page';
 
 export default async function CTServicesPage() {

@@ -1,4 +1,4 @@
-import LegacyClients from '@/app/(admin)/admin/clients/page';
+import LegacyClients from '@/components/modules/clients-page';
 import { requireCTPagePermission } from '@/lib/ct-page';
 
 export default async function CTClientsPage() {

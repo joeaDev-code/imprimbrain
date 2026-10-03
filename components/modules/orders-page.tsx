@@ -1,4 +1,4 @@
-export { default } from '@/components/modules/orders-page';import Link from "next/link";
+import Link from "next/link";
 import {
   ArrowDownRight,
   ArrowUpRight,

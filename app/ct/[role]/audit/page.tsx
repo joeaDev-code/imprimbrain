@@ -1,4 +1,4 @@
-import LegacyAudit from '@/app/(admin)/admin/audit/page';
+import LegacyAudit from '@/components/modules/audit-page';
 import { requireCTPagePermission } from '@/lib/ct-page';
 
 export default async function CTAuditPage() {

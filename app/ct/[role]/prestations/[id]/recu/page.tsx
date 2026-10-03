@@ -1,4 +1,4 @@
-import LegacyReceipt from '@/app/(admin)/admin/prestations/[id]/recu/page';
+import LegacyReceipt from '@/components/modules/order-receipt-page';
 import { requireCTPagePermission } from '@/lib/ct-page';
 import { ctPrestationsBase } from '@/lib/ct-links';
 

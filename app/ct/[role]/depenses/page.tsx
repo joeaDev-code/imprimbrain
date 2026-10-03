@@ -1,4 +1,4 @@
-import LegacyExpenses from '@/app/(admin)/admin/depenses/page';
+import LegacyExpenses from '@/components/modules/expenses-page';
 import { requireCTPagePermission } from '@/lib/ct-page';
 
 export default async function CTExpensesPage() {

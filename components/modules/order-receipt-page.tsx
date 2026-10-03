@@ -1,4 +1,4 @@
-export { default } from '@/components/modules/order-receipt-page';import { notFound } from "next/navigation";
+import { notFound } from "next/navigation";
 import { requireOrgUser, decrypt } from "@/lib/security";
 import { organizationKey } from "@/lib/domain";
 import { db } from "@/lib/prisma";

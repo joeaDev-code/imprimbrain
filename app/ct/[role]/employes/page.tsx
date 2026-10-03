@@ -1,4 +1,4 @@
-import LegacyEmployees from '@/app/(admin)/admin/employes/page';
+import LegacyEmployees from '@/components/modules/employees-page';
 import { requireCTPagePermission } from '@/lib/ct-page';
 
 export default async function CTEmployeesPage() {

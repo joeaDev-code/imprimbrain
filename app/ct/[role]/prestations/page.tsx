@@ -1,4 +1,4 @@
-import LegacyPrestations from '@/app/(admin)/admin/prestations/page';
+import LegacyPrestations from '@/components/modules/orders-page';
 import { requireCTPagePermission } from '@/lib/ct-page';
 import { ctPrestationsBase } from '@/lib/ct-links';
 
