@@ -5,12 +5,13 @@ import { ArrowDownLeft, CalendarDays, Plus, Receipt, Search, Wallet } from "luci
 import { toast } from "sonner";
 import { PageHeader } from "@/components/page-header";
 import { fcfa } from "@/lib/money";
+import type { CTRole } from "@/lib/ct-access";
 
 type Expense = { id:string; label:string; category?:string|null; amount:number|string; spentAt:string };
 
 const emptyForm = { label:"", category:"Divers", amount:"" };
 
-export default function Expenses() {
+export default function Expenses({ ctRole }: { ctRole: CTRole }) {
   const [rows,setRows] = useState<Expense[]>([]);
   const [f,setF] = useState(emptyForm);
   const [search,setSearch] = useState("");
@@ -46,7 +47,7 @@ export default function Expenses() {
   const monthTotal = useMemo(()=>rows.filter(r=>{const d=new Date(r.spentAt),n=new Date();return d.getMonth()===n.getMonth()&&d.getFullYear()===n.getFullYear();}).reduce((s,r)=>s+Number(r.amount),0),[rows]);
 
   return <div className="space-y-5">
-    <PageHeader title="Dépenses" subtitle="Suivez les sorties de trésorerie de votre imprimerie." />
+    <PageHeader ctRole={ctRole} title="Dépenses" subtitle="Suivez les sorties de trésorerie de votre imprimerie." />
     <section className="grid gap-3 sm:grid-cols-3">
       <div className="card p-4"><div className="grid size-9 place-items-center rounded-xl bg-cyan-50 text-cyan-600"><Receipt size={17}/></div><p className="mt-3 text-xl font-black text-slate-900">{rows.length}</p><p className="text-[10px] text-slate-500">Dépenses enregistrées</p></div>
       <div className="card p-4"><div className="grid size-9 place-items-center rounded-xl bg-blue-50 text-blue-600"><Wallet size={17}/></div><p className="mt-3 text-xl font-black text-slate-900">{fcfa(monthTotal)}</p><p className="text-[10px] text-slate-500">Dépenses ce mois</p></div>

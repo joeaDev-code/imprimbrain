@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import {
   ArrowDownUp,
   Mail,
@@ -15,6 +14,7 @@ import {
 import { toast } from "sonner";
 
 import { PageHeader } from "@/components/page-header";
+import type { CTRole } from "@/lib/ct-access";
 
 type Client = {
   id: string;
@@ -32,7 +32,7 @@ const emptyForm = {
   email: "",
 };
 
-export default function Clients() {
+export default function Clients({ ctRole }: { ctRole: CTRole }) {
   const [rows, setRows] = useState<Client[]>([]);
   const [form, setForm] = useState(emptyForm);
   const [loading, setLoading] = useState(false);
@@ -145,6 +145,7 @@ export default function Clients() {
   return (
     <div className="space-y-5">
       <PageHeader
+        ctRole={ctRole}
         title="Clients"
         subtitle={`${rows.length} client${rows.length > 1 ? "s" : ""} enregistré${rows.length > 1 ? "s" : ""}`}
       />
@@ -451,17 +452,7 @@ export default function Clients() {
                       })}
                     </td>
 
-                    <td>
-                      <div className="flex justify-end">
-                        <Link
-                          href={`/admin/clients/${client.id}`}
-                          title="Voir le client"
-                          className="grid size-8 place-items-center rounded-lg border border-slate-200 bg-white text-slate-400 opacity-0 transition group-hover:opacity-100 hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-600"
-                        >
-                          <ArrowDownUp size={13} />
-                        </Link>
-                      </div>
-                    </td>
+                    <td><div className="flex justify-end"><span className="grid size-8 place-items-center text-slate-300" title="Les détails du client sont affichés dans cette liste"><ArrowDownUp size={13} /></span></div></td>
                   </tr>
                 ))
               ) : (

@@ -13,6 +13,7 @@ import {
 import { toast } from "sonner";
 import { PageHeader } from "@/components/page-header";
 import { fcfa } from "@/lib/money";
+import type { CTRole } from "@/lib/ct-access";
 
 type StockItem = {
   id: string;
@@ -35,7 +36,7 @@ const empty = {
 
 type ModalType = "restock" | "adjust" | null;
 
-export default function Stock() {
+export default function Stock({ ctRole }: { ctRole: CTRole }) {
   const [rows, setRows] = useState<StockItem[]>([]);
   const [f, setF] = useState(empty);
   const [search, setSearch] = useState("");
@@ -245,6 +246,7 @@ export default function Stock() {
     <>
       <div className="space-y-5">
         <PageHeader
+          ctRole={ctRole}
           title="Stock"
           subtitle="Suivez les niveaux, les seuils d'alerte et les approvisionnements."
         />

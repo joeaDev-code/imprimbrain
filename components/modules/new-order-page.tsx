@@ -18,6 +18,7 @@ import { PageHeader } from "@/components/page-header";
 import { fcfa } from "@/lib/money";
 import { ReceiptModal } from "@/components/receipt/receipt-modal";
 import type { ReceiptData } from "@/components/receipt/receipt.types";
+import type { CTRole } from "@/lib/ct-access";
 
 type Client = {
   id: string;
@@ -69,7 +70,7 @@ function paymentLabel(method: string) {
   return labels[method] ?? method;
 }
 
-export default function NewOrder() {
+export default function NewOrder({ ctRole }: { ctRole: CTRole }) {
   const [clients, setClients] = useState<Client[]>([]);
   const [services, setServices] = useState<Service[]>([]);
   const [clientId, setClientId] = useState("");
@@ -392,6 +393,7 @@ export default function NewOrder() {
     <>
       <div className="space-y-5">
         <PageHeader
+          ctRole={ctRole}
           title="Nouvelle prestation"
           subtitle="Regroupez plusieurs services sur une même commande et accédez au reçu après enregistrement."
         />

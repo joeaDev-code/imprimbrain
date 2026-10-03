@@ -14,8 +14,9 @@ import { PageHeader } from "@/components/page-header";
 import { requireOrgUser } from "@/lib/security";
 import { db } from "@/lib/prisma";
 import { fcfa } from "@/lib/money";
+import type { CTRole } from "@/lib/ct-access";
 
-export default async function Prestations({ baseHref = "/admin" }: { baseHref?: string } = {}) {
+export default async function Prestations({ baseHref, ctRole }: { baseHref: string; ctRole: CTRole }) {
   const u = await requireOrgUser("ORDERS_VIEW");
 
   const rows = await db.order.findMany({
@@ -67,6 +68,7 @@ export default async function Prestations({ baseHref = "/admin" }: { baseHref?: 
   return (
     <div className="space-y-5">
       <PageHeader
+        ctRole={ctRole}
         title="Prestations"
         subtitle={`${rows.length} prestation${rows.length > 1 ? "s" : ""} enregistrée${rows.length > 1 ? "s" : ""}`}
       />

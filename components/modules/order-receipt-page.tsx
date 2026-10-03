@@ -7,7 +7,7 @@ import { PaymentForm } from "@/components/payment-form";
 import { PrintButton } from "@/components/print-button";
 import { ArrowLeft, CheckCircle2, Clock3, FileText, MapPin, Phone } from "lucide-react";
 
-export default async function Receipt({params,backHref="/admin/prestations"}:{params:Promise<{id:string}>;backHref?:string}){
+export default async function Receipt({params,backHref}:{params:Promise<{id:string}>;backHref:string}){
  const {id}=await params;const u=await requireOrgUser("ORDERS_VIEW");const [o,org]=await Promise.all([db.order.findFirst({where:{id,organizationId:u.organizationId!},include:{client:true,lines:true,payments:{orderBy:{paidAt:"asc"}}}}),db.organization.findUnique({where:{id:u.organizationId!}})]);if(!o||!org)notFound();
  const key=await organizationKey(org.id);const paid=o.payments.reduce((s,p)=>s+Number(p.amount),0),remaining=Math.max(0,Number(o.total)-paid);const phone=decrypt(org.phoneEncrypted,key),email=decrypt(org.emailEncrypted,key),address=decrypt(org.addressEncrypted,key);const clientPhone=o.client?decrypt(o.client.phoneEncrypted,key):null;
  return <div className="mx-auto max-w-4xl space-y-5"><div className="flex flex-wrap items-center justify-between gap-3 print:hidden"><a href={backHref} className="btn inline-flex items-center gap-2"><ArrowLeft size={15}/>Prestations</a><PrintButton/></div>

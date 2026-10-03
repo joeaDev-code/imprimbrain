@@ -1,7 +1,7 @@
-import LegacySettings from '@/components/modules/settings-page';
+import SettingsPage from '@/components/modules/settings-page';
 import { requireCTPagePermission } from '@/lib/ct-page';
 
 export default async function CTSettingsPage() {
-  await requireCTPagePermission('SETTINGS_VIEW');
-  return <LegacySettings />;
+  const user = await requireCTPagePermission('SETTINGS_VIEW');
+  return <SettingsPage ctRole={user.role} />;
 }

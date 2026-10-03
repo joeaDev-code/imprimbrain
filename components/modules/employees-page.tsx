@@ -4,12 +4,13 @@ import { useEffect, useState } from "react";
 import { ShieldCheck, UserPlus, Users, UserRoundCheck, UserRoundX } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/page-header";
+import type { CTRole } from "@/lib/ct-access";
 
 type Employee={id:string;name:string;email:string;role:string;active:boolean};
 const empty={name:"",email:"",password:"",role:"SECRETARY"};
 const roleLabel:Record<string,string>={SECRETARY:"Secrétaire",OFFICER:"Officier",ADMIN:"Administrateur",SUPER_ADMIN:"Super administrateur"};
 
-export default function Employees(){
+export default function Employees({ ctRole }: { ctRole: CTRole }){
   const [rows,setRows]=useState<Employee[]>([]),[f,setF]=useState(empty),[error,setError]=useState(""),[saving,setSaving]=useState(false),[loading,setLoading]=useState(true);
   async function load(){try{setLoading(true);const r=await fetch("/api/employees");if(!r.ok)throw new Error();const d=await r.json();setRows(Array.isArray(d)?d:[]);}catch{toast.error("Impossible de charger les employés.")}finally{setLoading(false)}}
   useEffect(()=>{load()},[]);
@@ -17,7 +18,7 @@ export default function Employees(){
   async function patch(id:string,data:Record<string,unknown>){const r=await fetch("/api/employees",{method:"PATCH",headers:{"content-type":"application/json"},body:JSON.stringify({id,...data})});if(!r.ok){toast.error("Modification impossible.");return}await load();toast.success("Employé mis à jour.")}
   const active=rows.filter(r=>r.active).length;
   return <div className="space-y-5">
-    <PageHeader title="Employés" subtitle="Gérez les comptes, les rôles et l'accès à votre imprimerie." />
+    <PageHeader ctRole={ctRole} title="Employés" subtitle="Gérez les comptes, les rôles et l'accès à votre imprimerie." />
     <section className="grid gap-3 sm:grid-cols-3"><div className="card p-4"><div className="grid size-9 place-items-center rounded-xl bg-cyan-50 text-cyan-600"><Users size={17}/></div><p className="mt-3 text-xl font-black">{rows.length}</p><p className="text-[10px] text-slate-500">Comptes employés</p></div><div className="card p-4"><div className="grid size-9 place-items-center rounded-xl bg-green-50 text-green-600"><UserRoundCheck size={17}/></div><p className="mt-3 text-xl font-black">{active}</p><p className="text-[10px] text-slate-500">Comptes actifs</p></div><div className="card p-4"><div className="grid size-9 place-items-center rounded-xl bg-violet-50 text-violet-600"><ShieldCheck size={17}/></div><p className="mt-3 text-xl font-black">{new Set(rows.map(r=>r.role)).size}</p><p className="text-[10px] text-slate-500">Rôles utilisés</p></div></section>
     <form onSubmit={add} className="card overflow-hidden"><div className="flex items-center gap-3 border-b border-slate-100 px-5 py-4"><div className="grid size-9 place-items-center rounded-xl bg-cyan-50 text-cyan-600"><UserPlus size={17}/></div><div><h2 className="text-sm font-black">Nouveau compte</h2><p className="text-[10px] text-slate-400">Créez un accès avec un rôle adapté.</p></div></div><div className="grid gap-3 p-5 md:grid-cols-2 xl:grid-cols-4"><div><label className="label">Nom complet <span className="text-red-500">*</span></label><input className="input" placeholder="Ex. Marie Kouassi" value={f.name} onChange={e=>setF({...f,name:e.target.value})} required/></div><div><label className="label">E-mail <span className="text-red-500">*</span></label><input className="input" type="email" placeholder="marie@..." value={f.email} onChange={e=>setF({...f,email:e.target.value})} required/></div><div><label className="label">Mot de passe temporaire <span className="text-red-500">*</span></label><input className="input" type="password" minLength={8} value={f.password} onChange={e=>setF({...f,password:e.target.value})} required/></div><div><label className="label">Rôle <span className="text-red-500">*</span></label><select className="input" value={f.role} onChange={e=>setF({...f,role:e.target.value})}><option value="SECRETARY">Secrétaire</option><option value="OFFICER">Officier</option><option value="ADMIN">Administrateur</option></select></div><div className="md:col-span-2 xl:col-span-4 flex items-center justify-between gap-3"><p className="text-[10px] text-slate-400">Le mot de passe pourra être changé par l'utilisateur selon votre politique d'accès.</p><button className="btn btn-primary" disabled={saving}>{saving?"Création…":"Créer le compte"}</button></div></div></form>
     {error&&<div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}

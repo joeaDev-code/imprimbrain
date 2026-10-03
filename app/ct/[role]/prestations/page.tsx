@@ -1,8 +1,8 @@
-import LegacyPrestations from '@/components/modules/orders-page';
+import OrdersPage from '@/components/modules/orders-page';
 import { requireCTPagePermission } from '@/lib/ct-page';
-import { ctPrestationsBase } from '@/lib/ct-links';
+import { ctPath } from '@/lib/ct-paths';
 
 export default async function CTPrestationsPage() {
   const user = await requireCTPagePermission('ORDERS_VIEW');
-  return <LegacyPrestations baseHref={ctPrestationsBase(user.role)} />;
+  return <OrdersPage baseHref={ctPath(user.role)} ctRole={user.role} />;
 }

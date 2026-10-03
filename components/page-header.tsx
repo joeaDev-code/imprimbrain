@@ -13,7 +13,8 @@ import {
   Boxes,
   Sparkles,
 } from "lucide-react";
-import { legacyHrefInCTContext } from "@/lib/ct-links";
+import type { CTRole } from "@/lib/ct-access";
+import { ctPath } from "@/lib/ct-paths";
 
 export type UserType = {
   name?: string;
@@ -26,32 +27,33 @@ type PageHeaderProps = {
   subtitle?: string;
   action?: ReactNode;
   user?: UserType;
+  ctRole: CTRole;
 };
 
 const quickActions = [
   {
-    href: "/admin/prestations/nouveau",
+    path: "/prestations/nouveau",
     label: "Prestation",
     icon: Plus,
     primary: true,
   },
   {
-    href: "/admin/clients/nouveau",
+    path: "/clients",
     label: "Client",
     icon: UserPlus,
   },
   {
-    href: "/admin/services/nouveau",
+    path: "/services",
     label: "Service",
     icon: PackagePlus,
   },
   {
-    href: "/admin/depenses/nouveau",
+    path: "/depenses",
     label: "Dépense",
     icon: Receipt,
   },
   {
-    href: "/admin/stock",
+    path: "/stock",
     label: "Stock",
     icon: Boxes,
   },
@@ -62,12 +64,17 @@ export function PageHeader({
   subtitle,
   action,
   user,
+  ctRole,
 }: PageHeaderProps) {
   const pathname = usePathname();
   const router = useRouter();
 
-  const isSettings = pathname.startsWith("/admin/parametres") || pathname.includes("/parametres");
-  const isProfile = pathname.startsWith("/admin/profil");
+  const isSettings = pathname.includes("/parametres");
+  const isProfile = pathname.includes("/profil");
+
+  function buildPath(path: string) {
+    return ctPath(ctRole, path);
+  }
 
   async function logout() {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -84,31 +91,35 @@ export function PageHeader({
       .join("")
       .toUpperCase() || "A";
 
+  const profileHref = ctPath(ctRole, "/profil");
+
+  const settingsHref = buildPath("/parametres");
+
   return (
     <header className="mb-6 rounded-3xl border border-slate-200/80 bg-white/90 p-5 shadow-sm backdrop-blur-md transition-all md:p-6">
       {/* Barre supérieure : Actions rapides + Utilisateur */}
       <div className="flex flex-col-reverse justify-between gap-4 border-b border-slate-100 pb-5 lg:flex-row lg:items-center">
-        
-        {/* Actions rapides - Défilement horizontal propre sans scrollbar visible */}
+        {/* Actions rapides */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1 lg:pb-0 [&::-webkit-scrollbar]:hidden [scrollbar-width:none] [-ms-overflow-style:none]">
           {quickActions.map((item) => {
             const { label, icon: Icon } = item;
-            const href = legacyHrefInCTContext(pathname, item.href);
+            const href = buildPath(item.path);
             const primary = "primary" in item && item.primary;
+
             return (
-            <Link
-              key={href}
-              href={href}
-              className={[
-                "inline-flex h-10 shrink-0 items-center gap-2 rounded-2xl px-4 text-[12px] font-semibold transition-all duration-200 active:scale-95",
-                primary
-                  ? "bg-[#173b68] text-white shadow-md shadow-[#173b68]/20 hover:bg-[#122f54]"
-                  : "border border-slate-200/80 bg-slate-50/70 text-slate-700 hover:border-slate-300 hover:bg-slate-100",
-              ].join(" ")}
-            >
-              <Icon size={16} strokeWidth={primary ? 2.2 : 2} />
-              <span>{label}</span>
-            </Link>
+              <Link
+                key={href}
+                href={href}
+                className={[
+                  "inline-flex h-10 shrink-0 items-center gap-2 rounded-2xl px-4 text-[12px] font-semibold transition-all duration-200 active:scale-95",
+                  primary
+                    ? "bg-[#173b68] text-white shadow-md shadow-[#173b68]/20 hover:bg-[#122f54]"
+                    : "border border-slate-200/80 bg-slate-50/70 text-slate-700 hover:border-slate-300 hover:bg-slate-100",
+                ].join(" ")}
+              >
+                <Icon size={16} strokeWidth={primary ? 2.2 : 2} />
+                <span>{label}</span>
+              </Link>
             );
           })}
 
@@ -120,10 +131,10 @@ export function PageHeader({
         </div>
 
         {/* Profil & Actions compte */}
-        <div className="flex items-center justify-end gap-2 shrink-0">
-          {/* Badge Profil */}
+        <div className="flex shrink-0 items-center justify-end gap-2">
+          {/* Profil */}
           <Link
-            href="/admin/profil"
+            href={profileHref}
             title="Voir le profil"
             className={[
               "flex h-10 items-center gap-2.5 rounded-2xl border px-3 transition-all duration-200 active:scale-95",
@@ -137,18 +148,19 @@ export function PageHeader({
             </div>
 
             <div className="hidden text-left sm:block">
-              <p className="max-w-[120px] truncate text-[11px] font-bold text-slate-800 leading-tight">
+              <p className="max-w-[120px] truncate text-[11px] font-bold leading-tight text-slate-800">
                 {user?.name || "Administrateur"}
               </p>
-              <p className="text-[9px] font-semibold tracking-wider text-slate-400 uppercase">
+
+              <p className="text-[9px] font-semibold uppercase tracking-wider text-slate-400">
                 {user?.role || "ADMIN"}
               </p>
             </div>
           </Link>
 
-          {/* Bouton Paramètres */}
+          {/* Paramètres */}
           <Link
-            href={legacyHrefInCTContext(pathname, "/admin/parametres")}
+            href={settingsHref}
             title="Paramètres"
             className={[
               "grid size-10 place-items-center rounded-2xl border transition-all duration-200 active:scale-95",
@@ -175,9 +187,9 @@ export function PageHeader({
       {/* Section Titre & Sous-titre */}
       <div className="pt-4">
         <div className="mb-1.5 flex items-center gap-1.5">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-[#173b68]/10 px-3 py-1 text-[10px] font-bold tracking-wider text-[#173b68] uppercase">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-[#173b68]/10 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-[#173b68]">
             <Sparkles size={11} className="text-[#173b68]" />
-            Imprim'Brain
+            Imprim&apos;Brain
           </span>
         </div>
 
@@ -186,7 +198,7 @@ export function PageHeader({
         </h1>
 
         {subtitle && (
-          <p className="mt-1 max-w-3xl text-xs font-medium text-slate-500 leading-relaxed md:text-sm">
+          <p className="mt-1 max-w-3xl text-xs font-medium leading-relaxed text-slate-500 md:text-sm">
             {subtitle}
           </p>
         )}

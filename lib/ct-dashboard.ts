@@ -1,5 +1,5 @@
 import type { CTRole } from '@/lib/ct-access';
-import { canonicalCTPath } from '@/lib/ct-access';
+import { ctPath } from '@/lib/ct-paths';
 
 export function dashboardTenantScopes(
   organizationId: string,
@@ -21,9 +21,8 @@ export function dashboardTenantScopes(
 }
 
 export function ctDashboardLinks(role: CTRole) {
-  const base = canonicalCTPath(role);
   return {
-    prestations: `${base}/prestations`,
-    stock: `${base}/stock`,
+    prestations: ctPath(role, '/prestations'),
+    stock: ctPath(role, '/stock'),
   };
 }

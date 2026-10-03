@@ -1,7 +1,7 @@
-import LegacyStock from '@/components/modules/stock-page';
+import StockPage from '@/components/modules/stock-page';
 import { requireCTPagePermission } from '@/lib/ct-page';
 
 export default async function CTStockPage() {
-  await requireCTPagePermission('STOCK_VIEW');
-  return <LegacyStock />;
+  const user = await requireCTPagePermission('STOCK_VIEW');
+  return <StockPage ctRole={user.role} />;
 }

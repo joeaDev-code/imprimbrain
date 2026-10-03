@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import test from 'node:test';
@@ -6,13 +7,12 @@ import { CTProvider } from '../components/ct/ct-provider';
 import { filterCTNavigation } from '../components/ct/navigation';
 import { PermissionGate } from '../components/ct/permission-gate';
 import { authenticatedHomePath, decideCTRoute, decideSuperAdminRoute } from '../lib/ct-access';
-import { resolveCTLegacyRoute as resolveLegacyModule } from '../lib/ct-route';
 import { hasPermission } from '../lib/ct-permissions';
 import { permissions } from '../lib/permissions';
 import { effectivePermissions } from '../lib/permissions-policy';
 import { createCTStore } from '../lib/stores/ct-store';
 import { ctDashboardLinks, dashboardTenantScopes } from '../lib/ct-dashboard';
-import { ctPrestationsBase, legacyHrefInCTContext } from '../lib/ct-links';
+import { ctPath } from '../lib/ct-paths';
 import { hasSessionCookie, isPrivatePagePath, redirectPrivatePageWithoutSession, requiresSameOriginMutation } from '../lib/request-boundary';
 
 const organizationId = 'org-test';
@@ -54,7 +54,7 @@ test('authenticated landing route is derived from server role and organization',
 
 test('proxy boundary distinguishes public pages, private page families, and API mutations', () => {
   assert.equal(isPrivatePagePath('/ct/secretary/stock'), true);
-  assert.equal(isPrivatePagePath('/admin/prestations'), true);
+  assert.equal(isPrivatePagePath('/admin/prestations'), false);
   assert.equal(isPrivatePagePath('/super-admin'), true);
   assert.equal(isPrivatePagePath('/login'), false);
   assert.equal(isPrivatePagePath('/recu/signed-token'), false);
@@ -67,7 +67,7 @@ test('proxy boundary distinguishes public pages, private page families, and API 
   assert.equal(hasSessionCookie('imprimbrain_session=', 'imprimbrain_session'), false);
   assert.equal(hasSessionCookie(null, 'imprimbrain_session'), false);
   assert.equal(redirectPrivatePageWithoutSession('/ct/admin', null, 'imprimbrain_session'), true);
-  assert.equal(redirectPrivatePageWithoutSession('/admin', null, 'imprimbrain_session'), true);
+  assert.equal(redirectPrivatePageWithoutSession('/admin', null, 'imprimbrain_session'), false);
   assert.equal(redirectPrivatePageWithoutSession('/super-admin', null, 'imprimbrain_session'), true);
   assert.equal(redirectPrivatePageWithoutSession('/ct/admin', 'imprimbrain_session=expired-or-invalid', 'imprimbrain_session'), false);
   assert.equal(redirectPrivatePageWithoutSession('/recu/public-token', null, 'imprimbrain_session'), false);
@@ -131,17 +131,23 @@ test('Dashboard action links use the verified CT role context, never legacy admi
   assert.deepEqual(ctDashboardLinks('SECRETARY'), { prestations: '/ct/secretary/prestations', stock: '/ct/secretary/stock' });
 });
 
-test('prestations routes and shared links preserve the validated CT role', () => {
-  assert.equal(ctPrestationsBase('ADMIN'), '/ct/admin/prestations');
-  assert.equal(ctPrestationsBase('OFFICER'), '/ct/officer/prestations');
-  assert.equal(ctPrestationsBase('SECRETARY'), '/ct/secretary/prestations');
-  assert.equal(legacyHrefInCTContext('/ct/officer/prestations', '/admin/prestations/nouveau'), '/ct/officer/prestations/nouveau');
-  assert.equal(legacyHrefInCTContext('/admin/prestations', '/admin/prestations/nouveau'), '/admin/prestations/nouveau');
-  assert.equal(legacyHrefInCTContext('/ct/secretary/clients', '/admin/clients/nouveau'), '/ct/secretary/clients');
-  assert.equal(legacyHrefInCTContext('/ct/officer/services', '/admin/services/nouveau'), '/ct/officer/services');
-  assert.equal(legacyHrefInCTContext('/ct/admin/depenses', '/admin/depenses/nouveau'), '/ct/admin/depenses');
-  assert.equal(legacyHrefInCTContext('/ct/admin/clients', '/admin/stock'), '/ct/admin/stock');
-  assert.equal(legacyHrefInCTContext('/ct/admin/parametres', '/admin/parametres'), '/ct/admin/parametres');
+test('shared CT paths preserve the verified role without authorization logic', () => {
+  assert.equal(ctPath('ADMIN', '/prestations'), '/ct/admin/prestations');
+  assert.equal(ctPath('OFFICER', '/prestations/nouveau'), '/ct/officer/prestations/nouveau');
+  assert.equal(ctPath('SECRETARY', 'clients'), '/ct/secretary/clients');
+});
+
+test('active CT routing and shared modules contain no legacy admin route', () => {
+  const files = [
+    'app/ct/[role]/layout.tsx',
+    'app/ct/[role]/prestations/page.tsx',
+    'components/page-header.tsx',
+    'components/modules/orders-page.tsx',
+    'components/modules/order-receipt-page.tsx',
+  ];
+  for (const file of files) {
+    assert.equal(readFileSync(file, 'utf8').includes('/admin'), false, `${file} must not reference /admin`);
+  }
 });
 
 test('prestations server permissions distinguish view, create, and cancellation rights', () => {
@@ -202,11 +208,4 @@ test('PermissionGate omits unauthorized content and renders authorized content',
   ));
   assert.equal(forbidden.includes('stock content'), false);
   assert.equal(allowed.includes('client content'), true);
-});
-
-test('CT transitional routes require the declared permission before legacy redirect', () => {
-  assert.deepEqual(resolveLegacyModule(['stock']), { permission: 'STOCK_VIEW', href: '/admin/stock' });
-  assert.deepEqual(resolveLegacyModule(['prestations', 'nouveau']), { permission: 'ORDERS_CREATE', href: '/admin/prestations/nouveau' });
-  assert.equal(resolveLegacyModule(['super-admin']), null);
-  assert.equal(resolveLegacyModule(['unknown']), null);
 });
