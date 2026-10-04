@@ -104,7 +104,7 @@ function StatCard({
 
 function OrganizationActions({
   organization,
-  onDelete,
+  onArchive,
 }: {
   organization: Organization;
   onArchive: (organization: Organization) => void;

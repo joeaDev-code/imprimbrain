@@ -2,9 +2,11 @@ export type Organization = {
   id: string;
   name: string;
   slug: string;
+  status?: string;
   createdAt: string;
   membersCount?: number;
   eventsCount?: number;
+  auditLogsCount?: number;
   logoUrl?: string | null;
   subscriptionsCount?: number;
   email?: string | null;
@@ -29,6 +31,7 @@ export type AdminUser = {
   email: string;
   platformRole: string;
   isActive: boolean;
+  mustChangePassword: boolean;
   createdAt: string;
   organization: { id: string; name: string; slug: string } | null;
   membershipsCount: number;
@@ -64,6 +67,20 @@ export type Dashboard = {
   payments: number;
   activeSubscriptions: number;
   subscriptionRevenue: number;
+  expiredSubscriptions: number;
+  suspendedOrganizations: number;
+  expiringSoon: number;
+};
+
+export type SuperAdminSubscription = {
+  id: string;
+  organization: { id: string; name: string; slug: string; status: string };
+  amount: number;
+  currency: string;
+  status: string;
+  startsAt: string;
+  expiresAt: string;
+  expired: boolean;
 };
 
 const BASE = "/api/super-admin";
@@ -87,7 +104,18 @@ export const superAdminApi = {
   organizations: (query = "") => request<Organization[]>(`/organisations${query ? `?q=${encodeURIComponent(query)}` : ""}`),
   organization: (id: string) => request<Organization>(`/organisations/${encodeURIComponent(id)}`),
   createOrganization: (body: FormData) => request<CreatedOrganization>("/organisations", { method: "POST", body }),
-  updateOrganization: (id: string, body: { name?: string; slug?: string }) => request<{ ok: true }>(`/organisations/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(body) }),
+  updateOrganization: (id: string, body: { name?: string; slug?: string; phone?: string; email?: string; address?: string }) =>
+    request<{ ok: true }>(`/organisations/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(body) }),
+  organizationAction: (
+    id: string,
+    action: "suspend" | "reactivate" | "archive" | "renew",
+    body?: { months?: number; amount?: number; method?: string; reference?: string },
+  ) =>
+    request<{ ok: true; status?: string }>(`/organisations/${encodeURIComponent(id)}/actions`, {
+      method: "POST",
+      body: JSON.stringify({ action, ...body }),
+    }),
+  subscriptions: () => request<SuperAdminSubscription[]>("/abonnements"),
   users: () => request<AdminUser[]>("/utilisateurs"),
   payments: () => request<SuperAdminPayment[]>("/payments"),
   audit: () => request<SuperAdminAuditLog[]>("/audit-logs"),
