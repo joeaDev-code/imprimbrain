@@ -12,7 +12,7 @@ export function canonicalCTPath(role: CTRole) {
 }
 
 export function authenticatedHomePath(role: Role | null, organizationId: string | null) {
-  if (role === 'SUPER_ADMIN') return '/super-admin';
+  if (role === 'SUPER_ADMIN') return '/ad/super-admin';
   if (role && isCTRole(role) && organizationId) return canonicalCTPath(role);
   return '/login';
 }
@@ -24,7 +24,7 @@ export type CTRouteDecision =
 
 export function decideCTRoute(role: Role | null, organizationId: string | null, requestedRole: string): CTRouteDecision {
   if (!role) return { kind: 'deny', href: '/login' };
-  if (role === 'SUPER_ADMIN') return { kind: 'redirect', href: '/super-admin' };
+  if (role === 'SUPER_ADMIN') return { kind: 'redirect', href: '/ad/super-admin' };
   if (!organizationId || !isCTRole(role)) return { kind: 'deny', href: '/login' };
   const canonical = canonicalCTPath(role);
   if (requestedRole !== role.toLowerCase()) return { kind: 'redirect', href: canonical };

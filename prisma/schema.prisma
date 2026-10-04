@@ -31,6 +31,19 @@ enum PaymentMethod {
   OTHER
 }
 
+enum SubscriptionStatus {
+  ACTIVE
+  EXPIRED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PAID
+  PENDING
+  FAILED
+  REFUNDED
+}
+
 enum StockMovementKind {
   IN
   OUT
@@ -79,6 +92,7 @@ model Organization {
   emailEncrypted   String?
   emailBlindIndex  String?
   addressEncrypted String?
+  logoUrl          String?
   wrappedDataKey   String
   createdAt        DateTime    @default(now())
   updatedAt        DateTime    @updatedAt
@@ -88,6 +102,8 @@ model Organization {
   stockItems       StockItem[]
   orders           Order[]
   expenses         Expense[]
+  subscriptions    Subscription[]
+  payments         Payment[]
   auditLogs        AuditLog[]
 
   @@index([slug])
@@ -239,14 +255,40 @@ model OrderLine {
 }
 
 model Payment {
-  id      String        @id @default(uuid()) @db.Uuid
-  orderId String        @db.Uuid
-  order   Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  amount  Decimal       @db.Decimal(14, 2)
-  method  PaymentMethod @default(CASH)
-  paidAt  DateTime      @default(now())
+  id             String        @id @default(uuid()) @db.Uuid
+  organizationId String?       @db.Uuid
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  orderId        String?       @db.Uuid
+  order          Order?        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  subscriptionId String?       @db.Uuid
+  subscription   Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  amount         Decimal       @db.Decimal(14, 2)
+  currency       String        @default("XOF")
+  status         PaymentStatus @default(PAID)
+  reference      String?       @unique
+  method         PaymentMethod @default(CASH)
+  paidAt         DateTime      @default(now())
 
   @@index([orderId, paidAt])
+  @@index([organizationId, paidAt])
+  @@index([subscriptionId, paidAt])
+}
+
+model Subscription {
+  id             String             @id @default(uuid()) @db.Uuid
+  organizationId String             @db.Uuid
+  organization   Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  amount         Decimal            @db.Decimal(14, 2)
+  currency       String             @default("XOF")
+  startsAt       DateTime
+  expiresAt      DateTime
+  status         SubscriptionStatus @default(ACTIVE)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  payments       Payment[]
+
+  @@index([organizationId, status])
+  @@index([expiresAt])
 }
 
 model Expense {

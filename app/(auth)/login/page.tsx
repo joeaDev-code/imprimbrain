@@ -60,7 +60,7 @@ export default function Login() {
       }
 
       if (authenticatedUser.role === "SUPER_ADMIN") {
-        router.replace("/super-admin");
+        router.replace("/ad/super-admin");
       } else if (["ADMIN", "OFFICER", "SECRETARY"].includes(authenticatedUser.role) && authenticatedUser.organizationId) {
         router.replace(`/ct/${authenticatedUser.role.toLowerCase()}`);
       } else {

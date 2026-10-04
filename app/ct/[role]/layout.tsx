@@ -17,7 +17,7 @@ export default async function CTLayout({
   try {
     user = await requireCTUser();
   } catch (error) {
-    if (error instanceof Error && error.message === 'SUPER_ADMIN_ONLY') redirect('/super-admin');
+    if (error instanceof Error && error.message === 'SUPER_ADMIN_ONLY') redirect('/ad/super-admin');
     redirect('/login');
   }
 

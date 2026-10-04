@@ -1,4 +1,4 @@
-const PRIVATE_PAGE_PREFIXES = ['/ct/', '/super-admin'];
+const PRIVATE_PAGE_PREFIXES = ['/ct/', '/super-admin', '/ad/super-admin'];
 
 export function isPrivatePagePath(pathname: string) {
   return PRIVATE_PAGE_PREFIXES.some((prefix) => pathname.startsWith(prefix));

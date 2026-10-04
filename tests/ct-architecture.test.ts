@@ -44,7 +44,7 @@ test('every session role accepts only its canonical CT segment', () => {
 });
 
 test('authenticated landing route is derived from server role and organization', () => {
-  assert.equal(authenticatedHomePath('SUPER_ADMIN', null), '/super-admin');
+  assert.equal(authenticatedHomePath('SUPER_ADMIN', null), '/ad/super-admin');
   assert.equal(authenticatedHomePath('ADMIN', organizationId), '/ct/admin');
   assert.equal(authenticatedHomePath('OFFICER', organizationId), '/ct/officer');
   assert.equal(authenticatedHomePath('SECRETARY', organizationId), '/ct/secretary');
@@ -56,6 +56,7 @@ test('proxy boundary distinguishes public pages, private page families, and API 
   assert.equal(isPrivatePagePath('/ct/secretary/stock'), true);
   assert.equal(isPrivatePagePath('/admin/prestations'), false);
   assert.equal(isPrivatePagePath('/super-admin'), true);
+  assert.equal(isPrivatePagePath('/ad/super-admin'), true);
   assert.equal(isPrivatePagePath('/login'), false);
   assert.equal(isPrivatePagePath('/recu/signed-token'), false);
   assert.equal(isPrivatePagePath('/api/health'), false);
@@ -69,12 +70,13 @@ test('proxy boundary distinguishes public pages, private page families, and API 
   assert.equal(redirectPrivatePageWithoutSession('/ct/admin', null, 'imprimbrain_session'), true);
   assert.equal(redirectPrivatePageWithoutSession('/admin', null, 'imprimbrain_session'), false);
   assert.equal(redirectPrivatePageWithoutSession('/super-admin', null, 'imprimbrain_session'), true);
+  assert.equal(redirectPrivatePageWithoutSession('/ad/super-admin', null, 'imprimbrain_session'), true);
   assert.equal(redirectPrivatePageWithoutSession('/ct/admin', 'imprimbrain_session=expired-or-invalid', 'imprimbrain_session'), false);
   assert.equal(redirectPrivatePageWithoutSession('/recu/public-token', null, 'imprimbrain_session'), false);
 });
 
 test('Super Admin is redirected out of CT; CT users cannot enter Super Admin', () => {
-  assert.deepEqual(decideCTRoute('SUPER_ADMIN', null, 'admin'), { kind: 'redirect', href: '/super-admin' });
+  assert.deepEqual(decideCTRoute('SUPER_ADMIN', null, 'admin'), { kind: 'redirect', href: '/ad/super-admin' });
   assert.deepEqual(decideSuperAdminRoute('SUPER_ADMIN'), { kind: 'allow' });
   assert.deepEqual(decideSuperAdminRoute('SECRETARY'), { kind: 'deny', href: '/ct/secretary' });
   assert.deepEqual(decideSuperAdminRoute('OFFICER'), { kind: 'deny', href: '/ct/officer' });
@@ -85,7 +87,7 @@ test('Super Admin is redirected out of CT; CT users cannot enter Super Admin', (
 
 test('CT access requires an organization and excludes unsupported roles', () => {
   assert.deepEqual(decideCTRoute('ADMIN', null, 'admin'), { kind: 'deny', href: '/login' });
-  assert.deepEqual(decideCTRoute('SUPER_ADMIN', organizationId, 'secretary'), { kind: 'redirect', href: '/super-admin' });
+  assert.deepEqual(decideCTRoute('SUPER_ADMIN', organizationId, 'secretary'), { kind: 'redirect', href: '/ad/super-admin' });
 });
 
 test('effective permissions preserve role defaults and user overrides', () => {
