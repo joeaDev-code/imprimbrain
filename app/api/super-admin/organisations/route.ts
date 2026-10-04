@@ -9,15 +9,16 @@ import { readJsonBody } from '@/lib/request-json';
 import { blindIndex, encrypt, randomKey, wrapKey } from '@/lib/security';
 import { requireSuperAdminApi } from '@/lib/super-admin-server';
 
-function toOrganization(row: { id: string; name: string; slug: string; logoUrl: string | null; createdAt: Date; _count: { users: number; auditLogs: number; subscriptions: number } }) {
+function toOrganization(row: { id: string; name: string; slug: string; status: string; logoUrl: string | null; createdAt: Date; _count: { users: number; auditLogs: number; subscriptions: number } }) {
   return {
     id: row.id,
     name: row.name,
     slug: row.slug,
+    status: row.status,
     logoUrl: row.logoUrl,
     createdAt: row.createdAt,
     membersCount: row._count.users,
-    eventsCount: row._count.auditLogs,
+    auditLogsCount: row._count.auditLogs,
     subscriptionsCount: row._count.subscriptions,
   };
 }
@@ -32,76 +33,10 @@ export async function GET(request: NextRequest) {
     const query = request.nextUrl.searchParams.get('q')?.trim() ?? '';
     const rows = await db.organization.findMany({
       where: query ? { OR: [{ name: { contains: query, mode: 'insensitive' } }, { slug: { contains: query, mode: 'insensitive' } }] } : undefined,
-      select: { id: true, name: true, slug: true, logoUrl: true, createdAt: true, _count: { select: { users: true, auditLogs: true, subscriptions: true } } },
+      select: { id: true, name: true, slug: true, status: true, logoUrl: true, createdAt: true, _count: { select: { users: true, auditLogs: true, subscriptions: true } } },
       orderBy: { createdAt: 'desc' },
     });
     return NextResponse.json(rows.map(toOrganization));
-  } catch (error) {
-    return apiError(error);
-  }
-}
-
-async function legacyPost(request: Request) {
-  try {
-    const user = await requireSuperAdminApi();
-    const body = await readJsonBody(request, 16 * 1024);
-    if (typeof body.name !== 'string' || !body.name.trim() || body.name.trim().length > 120 || (body.slug !== undefined && (typeof body.slug !== 'string' || body.slug.length > 120))) {
-      return NextResponse.json({ error: 'Nom ou slug invalide' }, { status: 400 });
-    }
-    if (typeof body.phone !== 'string' || !body.phone.trim() || body.phone.trim().length > 80 || typeof body.address !== 'string' || !body.address.trim() || body.address.trim().length > 500) {
-      return NextResponse.json({ error: 'Téléphone ou adresse invalide' }, { status: 400 });
-    }
-    if (typeof body.adminEmail !== 'string' || !body.adminEmail.trim() || body.adminEmail.trim().length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.adminEmail.trim())) {
-      return NextResponse.json({ error: 'E-mail administrateur invalide' }, { status: 400 });
-    }
-    if (typeof body.password !== 'string' || body.password.length < 8 || body.password.length > 1024) {
-      return NextResponse.json({ error: 'Mot de passe invalide' }, { status: 400 });
-    }
-
-    const slug = normalizedSlug(typeof body.slug === 'string' && body.slug.trim() ? body.slug : body.name);
-    if (!slug) return NextResponse.json({ error: 'Slug invalide' }, { status: 400 });
-    if (await db.organization.findUnique({ where: { slug }, select: { id: true } })) {
-      return NextResponse.json({ error: 'Ce slug est déjà utilisé' }, { status: 409 });
-    }
-
-    const email = body.adminEmail.trim().toLowerCase();
-    if (await db.user.findUnique({ where: { email }, select: { id: true } })) {
-      return NextResponse.json({ error: 'Cet e-mail est déjà utilisé' }, { status: 409 });
-    }
-
-    const dataKey = randomKey();
-    const organization = await db.$transaction(async (tx) => {
-      const created = await tx.organization.create({
-        data: {
-          name: body.name.trim(),
-          slug,
-          wrappedDataKey: wrapKey(dataKey),
-          phoneEncrypted: encrypt(body.phone.trim(), dataKey),
-          emailEncrypted: encrypt(email, dataKey),
-          addressEncrypted: encrypt(body.address.trim(), dataKey),
-        },
-      });
-      await tx.organization.update({
-        where: { id: created.id },
-        data: {
-          phoneBlindIndex: blindIndex(body.phone, 'organization.phone', created.id),
-          emailBlindIndex: blindIndex(email, 'organization.email', created.id),
-        },
-      });
-      await tx.user.create({
-        data: {
-          organizationId: created.id,
-          name: created.name,
-          email,
-          passwordHash: hashPassword(body.password),
-          role: 'ADMIN',
-          emailBlindIndex: blindIndex(email, 'user.email', created.id),
-        },
-      });
-      return created;
-    });
-    await writeAudit(user.id, organization.id, 'ORGANIZATION_CREATED', 'Organization', organization.id, { slug });
-    return NextResponse.json({ id: organization.id }, { status: 201 });
   } catch (error) {
     return apiError(error);
   }

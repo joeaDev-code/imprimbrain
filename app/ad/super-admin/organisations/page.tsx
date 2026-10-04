@@ -107,7 +107,7 @@ function OrganizationActions({
   onDelete,
 }: {
   organization: Organization;
-  onDelete: (organization: Organization) => void;
+  onArchive: (organization: Organization) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [position, setPosition] = useState({
@@ -179,7 +179,7 @@ function OrganizationActions({
             </Link>
 
             <Link
-              href={`/ad/super-admin/organisations/${organization.id}/modifier`}
+              href={`/ad/super-admin/organisations/${organization.id}`}
               onClick={() => setOpen(false)}
               className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
             >
@@ -197,13 +197,13 @@ function OrganizationActions({
               type="button"
               onClick={() => {
                 setOpen(false);
-                onDelete(organization);
+                onArchive(organization);
               }}
               className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
             >
               <Trash2 size={16} />
 
-              <span>Supprimer</span>
+              <span>Archiver</span>
             </button>
           </div>
         </>
@@ -244,11 +244,11 @@ function DeleteModal({
 
         <div className="p-6">
           <h2 className="text-lg font-bold text-slate-950">
-            Supprimer l'organisation ?
+            Archiver l'organisation ?
           </h2>
 
           <p className="mt-2 text-sm leading-6 text-slate-500">
-            Vous êtes sur le point de supprimer l'organisation{" "}
+            Vous êtes sur le point d’archiver l’organisation{" "}
             <span className="font-semibold text-slate-800">
               {organization.name}
             </span>
@@ -261,8 +261,7 @@ function DeleteModal({
             </p>
 
             <p className="mt-1 text-sm leading-5 text-red-700">
-              Cette action doit être confirmée par l'API. Elle peut entraîner
-              la suppression ou l'inaccessibilité des données associées.
+              L’organisation restera conservée avec son historique, mais son accès sera désactivé. Vous pourrez la consulter depuis le Super Admin.
             </p>
           </div>
 
@@ -285,12 +284,12 @@ function DeleteModal({
               {deleting ? (
                 <>
                   <RefreshCw size={16} className="animate-spin" />
-                  Suppression…
+                  Archivage…
                 </>
               ) : (
                 <>
                   <Trash2 size={16} />
-                  Supprimer
+                  Archiver
                 </>
               )}
             </button>
@@ -418,7 +417,7 @@ export default function OrganisationsPage() {
 
     const events = data.reduce(
       (total, organization) =>
-        total + Number(organization.eventsCount ?? 0),
+        total + Number(organization.auditLogsCount ?? 0),
       0,
     );
 
@@ -431,38 +430,13 @@ export default function OrganisationsPage() {
 
   async function handleDelete() {
     if (!selectedOrganization) return;
-
-    /*
-     * Le contrat exact de suppression doit être exposé par
-     * superAdminApi avant de brancher un DELETE ici.
-     *
-     * On ne fabrique volontairement pas d'appel HTTP direct
-     * pour éviter de contourner le contrat centralisé de l'API.
-     */
     setDeleting(true);
-
     try {
-      const api = superAdminApi as typeof superAdminApi & {
-        deleteOrganization?: (id: string) => Promise<unknown>;
-      };
-
-      if (!api.deleteOrganization) {
-        throw new Error(
-          "La suppression des organisations n'est pas encore exposée par l'API Super Admin.",
-        );
-      }
-
-      await api.deleteOrganization(selectedOrganization.id);
-
+      await superAdminApi.organizationAction(selectedOrganization.id, "archive");
       setSelectedOrganization(null);
-
       await load();
     } catch (e) {
-      setError(
-        e instanceof Error
-          ? e.message
-          : "Impossible de supprimer cette organisation.",
-      );
+      setError(e instanceof Error ? e.message : "Impossible d’archiver cette organisation.");
     } finally {
       setDeleting(false);
     }
@@ -653,7 +627,7 @@ export default function OrganisationsPage() {
                               size={13}
                               className="text-slate-400"
                             />
-                            {formatNumber(organization.eventsCount)}
+                            {formatNumber(organization.auditLogsCount)}
                           </span>
                         </td>
 
@@ -672,7 +646,7 @@ export default function OrganisationsPage() {
                         <td className="px-6 py-4">
                           <OrganizationActions
                             organization={organization}
-                            onDelete={setSelectedOrganization}
+                            onArchive={setSelectedOrganization}
                           />
                         </td>
                       </tr>

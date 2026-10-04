@@ -59,7 +59,9 @@ export default function Login() {
         throw new Error("Connexion établie mais identité impossible à vérifier.");
       }
 
-      if (authenticatedUser.role === "SUPER_ADMIN") {
+      if (authenticatedUser.mustChangePassword) {
+        router.replace("/change-password");
+      } else if (authenticatedUser.role === "SUPER_ADMIN") {
         router.replace("/ad/super-admin");
       } else if (["ADMIN", "OFFICER", "SECRETARY"].includes(authenticatedUser.role) && authenticatedUser.organizationId) {
         router.replace(`/ct/${authenticatedUser.role.toLowerCase()}`);

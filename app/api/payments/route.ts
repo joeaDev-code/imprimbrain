@@ -32,7 +32,7 @@ export async function POST(request: Request) {
       if (!canAcceptPayment(amount, Number(order.total), paid)) throw new Error('PAYMENT_EXCEEDS_BALANCE');
 
       const created = await tx.payment.create({
-        data: { orderId: order.id, amount, method },
+        data: { organizationId: user.organizationId!, orderId: order.id, amount, method },
         select: { id: true, amount: true, method: true },
       });
       if (Math.abs(Number(order.total) - paid - amount) < 0.01) {
@@ -41,12 +41,17 @@ export async function POST(request: Request) {
           data: { status: 'DELIVERED' },
         });
       }
+      await tx.auditLog.create({
+        data: {
+          userId: user.id,
+          organizationId: user.organizationId!,
+          action: 'PAYMENT_CREATED',
+          entity: 'Payment',
+          entityId: created.id,
+          metadata: { amount, method },
+        },
+      });
       return created;
-    });
-
-    await writeAudit(user.id, user.organizationId, 'PAYMENT_CREATED', 'Payment', payment.id, {
-      amount: Number(payment.amount),
-      method: payment.method,
     });
     return NextResponse.json({ id: payment.id });
   } catch (error) {

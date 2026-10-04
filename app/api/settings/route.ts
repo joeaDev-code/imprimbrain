@@ -38,21 +38,37 @@ export async function PATCH(req: Request) {
     const organizationId = user.organizationId!;
     const key = await organizationKey(organizationId);
     const phone = input.phone as string | null | undefined;
-    const email = input.email as string | null | undefined;
-    await db.organization.update({
-      where: { id: organizationId },
-      data: {
-        name: input.name.trim(),
-        phoneEncrypted: encrypt(phone, key),
-        phoneBlindIndex: blindIndex(phone, 'organization.phone', organizationId),
-        emailEncrypted: encrypt(email, key),
-        emailBlindIndex: blindIndex(email, 'organization.email', organizationId),
-        addressEncrypted: encrypt(input.address as string | null | undefined, key),
-      },
+    const email = typeof input.email === 'string' ? input.email.trim().toLowerCase() : input.email as string | null | undefined;
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return NextResponse.json({ error: 'E-mail invalide' }, { status: 400 });
+
+    await db.$transaction(async (tx) => {
+      if (email) {
+        const existing = await tx.user.findFirst({ where: { email, id: { not: user.id } }, select: { id: true } });
+        if (existing) throw new Error('EMAIL_EXISTS');
+      }
+
+      await tx.organization.update({
+        where: { id: organizationId },
+        data: {
+          name: input.name.trim(),
+          phoneEncrypted: encrypt(phone, key),
+          phoneBlindIndex: blindIndex(phone, 'organization.phone', organizationId),
+          emailEncrypted: encrypt(email, key),
+          emailBlindIndex: blindIndex(email, 'organization.email', organizationId),
+          addressEncrypted: encrypt(input.address as string | null | undefined, key),
+        },
+      });
+
+      if (email && user.role === 'ADMIN' && email !== user.email) {
+        await tx.user.update({ where: { id: user.id }, data: { email, emailBlindIndex: blindIndex(email, 'user.email', organizationId) } });
+        await tx.session.deleteMany({ where: { userId: user.id } });
+      }
+
+      await tx.auditLog.create({ data: { userId: user.id, organizationId, action: 'SETTINGS_UPDATED', entity: 'Organization', entityId: organizationId, metadata: { fields: ['name', 'phone', 'email', 'address'] } } });
     });
-    await writeAudit(user.id, organizationId, 'SETTINGS_UPDATED', 'Organization', organizationId);
     return NextResponse.json({ ok: true });
   } catch (error) {
+    if (error instanceof Error && error.message === 'EMAIL_EXISTS') return NextResponse.json({ error: 'Cet e-mail est déjà utilisé.' }, { status: 409 });
     return apiError(error);
   }
 }

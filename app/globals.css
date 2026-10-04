@@ -305,3 +305,25 @@ button {
         padding: 9px;
     }
 }
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-\[float_7s_ease-in-out_infinite\],
+  .animate-\[float_6s_ease-in-out_infinite_1s\],
+  .animate-\[float_8s_ease-in-out_infinite_2s\],
+  .animate-\[float_7s_ease-in-out_infinite_1\.5s\],
+  .animate-\[float_9s_ease-in-out_infinite_3s\],
+  .animate-\[float_8s_ease-in-out_infinite_2\.5s\] {
+    animation: none !important;
+  }
+}

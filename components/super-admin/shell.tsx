@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   Building2,
   CreditCard,
+  CalendarClock,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -22,6 +23,7 @@ const items = [
   ["/ad/super-admin/organisations", "Organisations", Building2],
   ["/ad/super-admin/utilisateurs", "Utilisateurs", Users],
   ["/ad/super-admin/paiements", "Paiements", CreditCard],
+  ["/ad/super-admin/abonnements", "Abonnements", CalendarClock],
   ["/ad/super-admin/audit", "Journal d’audit", ScrollText],
 ] as const;
 

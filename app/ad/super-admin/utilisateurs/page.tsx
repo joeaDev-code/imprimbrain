@@ -405,7 +405,9 @@ export default function Users() {
                     </td>
 
                     <td className="px-5 py-4">
-                      {user.isActive ? (
+                      {user.mustChangePassword ? (
+                        <span className="inline-flex items-center gap-2 text-xs font-semibold text-amber-600"><span className="h-2 w-2 rounded-full bg-amber-500" />Mot de passe à changer</span>
+                      ) : user.isActive ? (
                         <span className="inline-flex items-center gap-2 text-xs font-semibold text-emerald-600">
                           <span className="h-2 w-2 rounded-full bg-emerald-500" />
                           Actif
@@ -471,7 +473,9 @@ export default function Users() {
                         </button>
                       </div>
 
-                      {user.isActive ? (
+                      {user.mustChangePassword ? (
+                        <span className="inline-flex items-center gap-2 text-xs font-semibold text-amber-600"><span className="h-2 w-2 rounded-full bg-amber-500" />Mot de passe à changer</span>
+                      ) : user.isActive ? (
                         <span className="flex h-2.5 w-2.5 shrink-0 rounded-full bg-emerald-500 ring-4 ring-emerald-50" />
                       ) : (
                         <span className="flex h-2.5 w-2.5 shrink-0 rounded-full bg-slate-300 ring-4 ring-slate-100" />
@@ -486,6 +490,8 @@ export default function Users() {
                       >
                         {roleLabel(user.platformRole)}
                       </span>
+
+                      {user.mustChangePassword && <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700">Mot de passe à changer</span>}
 
                       <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-500">
                         <CalendarDays className="h-3.5 w-3.5" />

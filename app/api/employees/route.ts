@@ -119,6 +119,8 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ id: employee.id });
   } catch (error) {
+    const code = error && typeof error === 'object' && 'code' in error ? String(error.code) : '';
+    if (code === 'P2002') return NextResponse.json({ error: 'Cet e-mail est déjà utilisé.' }, { status: 409 });
     return apiError(error);
   }
 }

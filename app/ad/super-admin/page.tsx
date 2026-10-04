@@ -5,6 +5,8 @@ import {
   ArrowUpRight,
   Building2,
   CreditCard,
+  CalendarClock,
+  AlertTriangle,
   RefreshCw,
   ShieldCheck,
   Users,
@@ -159,78 +161,25 @@ function PlatformOverview({
   );
 }
 
-function PlatformHealth({
-  organizations,
-  users,
-  payments,
-}: {
-  organizations: number;
-  users: number;
-  payments: number;
-}) {
+function PlatformHealth({ organizations, users, payments, activeSubscriptions, expiringSoon, expiredSubscriptions }: { organizations: number; users: number; payments: number; activeSubscriptions: number; expiringSoon: number; expiredSubscriptions: number; }) {
   const indicators = [
-    {
-      label: "Organisations enregistrées",
-      value: organizations,
-      icon: Building2,
-    },
-    {
-      label: "Utilisateurs enregistrés",
-      value: users,
-      icon: Users,
-    },
-    {
-      label: "Paiements enregistrés",
-      value: payments,
-      icon: CreditCard,
-    },
+    { label: "Organisations enregistrées", value: organizations, icon: Building2 },
+    { label: "Utilisateurs enregistrés", value: users, icon: Users },
+    { label: "Paiements enregistrés", value: payments, icon: CreditCard },
+    { label: "Abonnements actifs", value: activeSubscriptions, icon: CalendarClock },
+    { label: "Expirations sous 7 jours", value: expiringSoon, icon: AlertTriangle },
+    { label: "Abonnements expirés", value: expiredSubscriptions, icon: AlertTriangle },
   ];
 
   return (
     <div className="flex flex-col justify-between rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm sm:p-7">
       <div>
         <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="grid size-10 place-items-center rounded-2xl bg-cyan-50 text-cyan-600">
-              <ShieldCheck size={20} strokeWidth={2.5} />
-            </div>
-            <div>
-              <h2 className="text-base font-bold text-slate-900">
-                État de la plateforme
-              </h2>
-              <p className="text-xs font-medium text-slate-400">
-                Statuts en temps réel fournis par l’API
-              </p>
-            </div>
-          </div>
-
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200/60 bg-emerald-50 px-3 py-1 text-[11px] font-bold text-emerald-700">
-            <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
-            Opérationnelle
-          </span>
+          <div className="flex items-center gap-3"><div className="grid size-10 place-items-center rounded-2xl bg-cyan-50 text-cyan-600"><ShieldCheck size={20} strokeWidth={2.5}/></div><div><h2 className="text-base font-bold text-slate-900">État de la plateforme</h2><p className="text-xs font-medium text-slate-400">Données calculées par l’API Super Admin</p></div></div>
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200/60 bg-emerald-50 px-3 py-1 text-[11px] font-bold text-emerald-700"><span className="size-2 rounded-full bg-emerald-500 animate-pulse"/>API connectée</span>
         </div>
-
-        <div className="mt-6 space-y-2.5">
-          {indicators.map(({ label, value, icon: Icon }) => (
-            <div
-              key={label}
-              className="flex items-center justify-between gap-4 rounded-2xl border border-slate-100 bg-slate-50/50 p-3.5 transition-colors hover:bg-slate-50"
-            >
-              <div className="flex min-w-0 items-center gap-3">
-                <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-white text-slate-500 shadow-sm border border-slate-200/60">
-                  <Icon size={17} strokeWidth={2.5} />
-                </div>
-
-                <span className="truncate text-xs font-bold text-slate-700">
-                  {label}
-                </span>
-              </div>
-
-              <span className="shrink-0 rounded-xl bg-white px-2.5 py-1 text-xs font-black text-slate-900 border border-slate-200/60 shadow-sm">
-                {formatNumber(value)}
-              </span>
-            </div>
-          ))}
+        <div className="mt-6 grid gap-2.5 sm:grid-cols-2">
+          {indicators.map(({ label, value, icon: Icon }) => <div key={label} className="flex items-center justify-between gap-3 rounded-2xl border border-slate-100 bg-slate-50/50 p-3"><div className="flex min-w-0 items-center gap-3"><div className="grid size-9 shrink-0 place-items-center rounded-xl bg-white text-slate-500 shadow-sm border border-slate-200/60"><Icon size={17}/></div><span className="truncate text-xs font-bold text-slate-700">{label}</span></div><span className="shrink-0 rounded-xl bg-white px-2.5 py-1 text-xs font-black text-slate-900 border border-slate-200/60">{formatNumber(value)}</span></div>)}
         </div>
       </div>
     </div>
@@ -359,6 +308,9 @@ export default function SuperAdminDashboard() {
           organizations={organizations}
           users={users}
           payments={payments}
+          activeSubscriptions={Number(data.activeSubscriptions ?? 0)}
+          expiringSoon={Number(data.expiringSoon ?? 0)}
+          expiredSubscriptions={Number(data.expiredSubscriptions ?? 0)}
         />
       </section>
 

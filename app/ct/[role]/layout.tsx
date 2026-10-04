@@ -18,6 +18,8 @@ export default async function CTLayout({
     user = await requireCTUser();
   } catch (error) {
     if (error instanceof Error && error.message === 'SUPER_ADMIN_ONLY') redirect('/ad/super-admin');
+    if (error instanceof Error && error.message === 'PASSWORD_CHANGE_REQUIRED') redirect('/change-password');
+    if (error instanceof Error && (error.message === 'SUBSCRIPTION_EXPIRED' || error.message === 'ORGANIZATION_SUSPENDED')) redirect('/abonnement-expire');
     redirect('/login');
   }
 
@@ -29,7 +31,7 @@ export default async function CTLayout({
 
   const organization = await db.organization.findUnique({
     where: { id: organizationId },
-    select: { id: true, name: true },
+    select: { id: true, name: true, logoUrl: true },
   });
   if (!organization) redirect('/login');
 
@@ -42,7 +44,7 @@ export default async function CTLayout({
       organizationId,
       permissions: user.permissions,
     },
-    organization: { id: organization.id, name: organization.name, logo: null },
+    organization: { id: organization.id, name: organization.name, logo: organization.logoUrl },
   };
 
   return (

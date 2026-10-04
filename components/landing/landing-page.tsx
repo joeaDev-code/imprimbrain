@@ -1,222 +1,439 @@
 import {
   ArrowRight,
   BarChart3,
+  Bell,
   Check,
   ChevronDown,
   ClipboardList,
   CreditCard,
   FileText,
   Package,
+  Receipt,
   ShieldCheck,
   Sparkles,
   Users,
   Zap,
 } from "lucide-react";
+import Image from "next/image";
+
 import { LandingHeader } from "./landing-header";
 import { LandingFooter } from "./landing-footer";
 
 const features = [
   {
+    icon: BarChart3,
+    title: "Pilotage en temps réel",
+    text: "Visualisez vos commandes, paiements et alertes stock depuis un tableau de bord clair.",
+    featured: true,
+  },
+  {
     icon: ClipboardList,
     title: "Commandes centralisées",
-    text: "Créez, suivez et gérez les prestations de vos clients depuis un seul espace.",
+    text: "Créez et suivez chaque prestation sans multiplier les fichiers et carnets.",
+    featured: false,
   },
   {
     icon: Users,
-    title: "Gestion des clients",
-    text: "Retrouvez rapidement les informations et l'historique de chaque client.",
+    title: "Clients & employés",
+    text: "Retrouvez vos clients et adaptez les accès de votre équipe grâce aux rôles.",
+    featured: false,
+  },
+  {
+    icon: Bell,
+    title: "Alertes utiles",
+    text: "Soyez informé des niveaux de stock et des opérations qui demandent votre attention.",
+    featured: false,
   },
   {
     icon: Package,
-    title: "Stock maîtrisé",
-    text: "Suivez vos consommables, seuils d'alerte et mouvements de stock.",
+    title: "Gestion du stock",
+    text: "Suivez les entrées, sorties, ajustements et seuils de vos consommables.",
+    featured: false,
   },
   {
     icon: CreditCard,
-    title: "Paiements",
-    text: "Gérez les paiements partiels, soldes et montants à rendre sans calcul manuel.",
+    title: "Paiements simplifiés",
+    text: "Gérez les paiements partiels, les soldes et les différents moyens d’encaissement.",
+    featured: false,
   },
   {
-    icon: FileText,
+    icon: Receipt,
     title: "Reçus professionnels",
-    text: "Générez des reçus clairs et prêts à imprimer pour chaque prestation.",
+    text: "Générez des reçus propres, consultables et prêts à être imprimés.",
+    featured: false,
   },
   {
-    icon: BarChart3,
-    title: "Pilotage",
-    text: "Visualisez les données utiles à la gestion quotidienne de votre imprimerie.",
+    icon: ShieldCheck,
+    title: "Sécurité & permissions",
+    text: "Les accès sont organisés par rôle et les opérations importantes sont journalisées.",
+    featured: false,
   },
-];
+] as const;
 
 const steps = [
-  ["01", "Créez votre espace", "Configurez votre imprimerie et vos services."],
-  ["02", "Gérez vos prestations", "Enregistrez clients, commandes et paiements."],
-  ["03", "Pilotez votre activité", "Suivez votre stock et vos opérations au même endroit."],
-];
+  {
+    number: "01",
+    title: "Créez votre espace",
+    text: "Configurez votre imprimerie et vos services.",
+  },
+  {
+    number: "02",
+    title: "Enregistrez vos opérations",
+    text: "Clients, prestations, commandes, paiements et stock.",
+  },
+  {
+    number: "03",
+    title: "Pilotez votre activité",
+    text: "Retrouvez les informations importantes au même endroit.",
+  },
+] as const;
 
 const faqs = [
-  ["Imprim’Brain est-il adapté aux petites imprimeries ?", "Oui. L’interface est pensée pour centraliser les opérations essentielles sans imposer une usine à gaz."],
-  ["Puis-je gérer plusieurs employés ?", "Oui. Le système prévoit des rôles et des permissions pour adapter l’accès aux différents collaborateurs."],
-  ["Le paiement partiel est-il géré ?", "Oui. Une commande peut être créée avec un paiement nul, partiel ou complet, avec calcul du reste à payer."],
-  ["Puis-je imprimer les reçus ?", "Oui. Les reçus sont conçus pour être consultés et imprimés depuis l’application."],
-];
+  {
+    question: "Imprim’Brain est-il adapté aux petites imprimeries ?",
+    answer:
+      "Oui. L’interface est pensée pour centraliser les opérations essentielles sans imposer une usine à gaz.",
+  },
+  {
+    question: "Puis-je gérer plusieurs employés ?",
+    answer:
+      "Oui. Le système prévoit des rôles et des permissions pour adapter l’accès aux différents collaborateurs.",
+  },
+  {
+    question: "Le paiement partiel est-il géré ?",
+    answer:
+      "Oui. Une commande peut être créée avec un paiement nul, partiel ou complet, avec calcul du reste à payer.",
+  },
+  {
+    question: "Puis-je imprimer les reçus ?",
+    answer:
+      "Oui. Les reçus sont conçus pour être consultés et imprimés depuis l’application.",
+  },
+] as const;
+
+const dashboardStats = [
+  ["Commandes", "128", ClipboardList],
+  ["Clients", "84", Users],
+  ["Encaissements", "1,24 M", CreditCard],
+  ["Stock", "12 alertes", Package],
+] as const;
+
+const activityBars = [34, 48, 42, 66, 57, 78, 62, 88, 71, 96, 83, 108];
 
 export function LandingPage() {
   return (
-    <main className="min-h-screen overflow-x-hidden bg-white text-slate-950">
+    <main className="min-h-screen overflow-x-hidden bg-white text-[#101827]">
       <LandingHeader />
 
-      <section className="relative isolate overflow-hidden">
-        <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_75%_15%,rgba(6,182,212,.14),transparent_30%),linear-gradient(to_bottom,#f8fdff,#fff)]" />
-        <div className="mx-auto grid max-w-7xl items-center gap-14 px-6 pb-20 pt-16 lg:grid-cols-[1.02fr_.98fr] lg:px-8 lg:pb-28 lg:pt-24">
-          <div>
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-cyan-100 bg-cyan-50 px-4 py-2 text-sm font-semibold text-cyan-700">
-              <Sparkles className="h-4 w-4" />
+      {/* =========================================================
+          HERO
+          ========================================================= */}
+      <section className="relative overflow-hidden bg-white">
+        {/* Decorative brand shapes */}
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          <div className="absolute -left-40 top-32 h-[420px] w-[420px] rounded-full bg-blue-50/80 blur-[2px]" />
+
+          <div className="absolute -right-40 top-[28%] h-[500px] w-[500px] rounded-full bg-cyan-50/80 blur-[4px]" />
+
+          <div className="absolute left-1/2 top-[38%] h-[500px] w-[700px] -translate-x-1/2 rounded-full bg-blue-50/60 blur-[100px]" />
+
+          <div className="absolute left-[4%] top-[48%] h-32 w-32 rounded-full border-[18px] border-blue-100/80" />
+
+          <div className="absolute right-[5%] top-[18%] h-44 w-44 rounded-full border-[24px] border-cyan-100/80" />
+
+          <div className="absolute right-[20%] top-[12%] h-8 w-8 rounded-full bg-blue-200/70" />
+
+          <div className="absolute left-[18%] top-[18%] h-5 w-5 rounded-full bg-cyan-200/80" />
+
+          <div className="absolute left-[42%] top-[-180px] h-[350px] w-[350px] rounded-full bg-blue-50/70 blur-3xl" />
+
+          <div className="absolute bottom-[8%] right-[-100px] h-[260px] w-[260px] rotate-45 rounded-[70px] bg-cyan-50/80" />
+
+          <div className="absolute left-[8%] top-[65%] h-3 w-3 rounded-full bg-blue-300/70" />
+          <div className="absolute left-[11%] top-[68%] h-2 w-2 rounded-full bg-cyan-300/70" />
+          <div className="absolute right-[12%] top-[62%] h-3 w-3 rounded-full bg-cyan-300/70" />
+
+          <div className="absolute bottom-[18%] right-[14%] h-28 w-28 rounded-full border border-blue-200/80" />
+
+          {/* Small logo-inspired accent */}
+          <div className="absolute right-[25%] top-[22%] h-2.5 w-2.5 rounded-full bg-pink-400/70" />
+          <div className="absolute left-[27%] top-[30%] h-2.5 w-2.5 rounded-full bg-yellow-400/80" />
+        </div>
+
+        <div className="relative mx-auto max-w-7xl px-5 pb-20 pt-28 sm:px-6 lg:px-8">
+          {/* Hero content */}
+          <div className="relative z-10 mx-auto max-w-4xl text-center">
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-cyan-100 bg-white/90 px-4 py-2 text-xs font-semibold text-slate-600 shadow-sm backdrop-blur">
+              <span className="h-1.5 w-1.5 rounded-full bg-[var(--primary)] shadow-[0_0_0_4px_rgba(6,182,212,0.10)]" />
               Gestion intelligente pour imprimeries
             </div>
-            <h1 className="max-w-3xl text-4xl font-bold leading-[1.08] tracking-tight sm:text-5xl lg:text-6xl">
-              Gérez votre imprimerie
-              <span className="text-cyan-500"> simplement.</span>
+
+            <h1 className="text-balance text-5xl font-bold leading-[0.98] tracking-[-0.055em] text-[#101827] sm:text-6xl lg:text-[76px]">
+              Gérez votre imprimerie.
+              <span className="mt-2 block bg-gradient-to-r from-[var(--blue)] to-[var(--primary)] bg-clip-text text-transparent">
+                Plus simplement.
+              </span>
             </h1>
-            <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600">
-              Imprim’Brain centralise vos clients, prestations, commandes,
-              paiements, stocks et reçus pour vous aider à travailler plus
-              efficacement au quotidien.
+
+            <p className="mx-auto mt-7 max-w-2xl text-base leading-7 text-slate-500 sm:text-lg">
+              Clients, prestations, commandes, paiements, stocks et reçus.
+              Imprim’Brain rassemble l’essentiel de votre imprimerie dans un
+              seul espace.
             </p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <a href="/inscription" className="inline-flex items-center justify-center gap-2 rounded-xl bg-cyan-500 px-6 py-3.5 font-bold text-white shadow-lg shadow-cyan-500/20 transition hover:bg-cyan-600">
-                Commencer maintenant <ArrowRight className="h-5 w-5" />
+
+            <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+              <a
+                href="/inscription"
+                className="inline-flex items-center justify-center rounded-full bg-[var(--primary)] px-7 py-3.5 text-sm font-bold text-white shadow-lg shadow-cyan-500/20 transition hover:-translate-y-0.5 hover:bg-[var(--primary-hover)]"
+              >
+                Commencer maintenant
+                <ArrowRight className="ml-2 h-4 w-4" />
               </a>
-              <a href="/connexion" className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-6 py-3.5 font-bold text-slate-700 transition hover:border-cyan-200 hover:text-cyan-700">
-                Se connecter
+
+              <a
+                href="#fonctionnalites"
+                className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white/90 px-7 py-3.5 text-sm font-semibold text-[#101827] shadow-sm backdrop-blur transition hover:border-cyan-200 hover:bg-cyan-50 hover:text-[var(--primary-hover)]"
+              >
+                Découvrir les fonctionnalités
               </a>
-            </div>
-            <div className="mt-7 flex flex-wrap gap-x-6 gap-y-3 text-sm text-slate-500">
-              {["Simple à prendre en main", "Pensé pour les imprimeries", "Données sécurisées"].map((item) => (
-                <span key={item} className="inline-flex items-center gap-2">
-                  <Check className="h-4 w-4 text-cyan-500" /> {item}
-                </span>
-              ))}
             </div>
           </div>
 
-          <div className="relative">
-            <div className="absolute -inset-5 rounded-[2rem] bg-cyan-400/10 blur-2xl" />
-            <div className="relative overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white p-3 shadow-2xl shadow-slate-900/10">
-              <div className="rounded-2xl bg-slate-950 p-4 sm:p-5">
-                <div className="mb-5 flex items-center justify-between">
-                  <div>
-                    <p className="text-xs text-slate-400">Vue d’ensemble</p>
-                    <p className="mt-1 text-lg font-bold text-white">Mon imprimerie</p>
+          {/* Product mockups card */}
+          <div className="relative z-10 mt-20 overflow-hidden rounded-[36px] border border-slate-200/80 bg-white/85 px-4 pb-20 pt-10 shadow-[0_30px_100px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:px-8 sm:pt-14 lg:px-12">
+            <div className="pointer-events-none absolute inset-0 overflow-hidden">
+              <div className="absolute -left-32 top-1/3 h-72 w-72 rounded-full bg-blue-100/70 blur-3xl" />
+
+              <div className="absolute -right-32 top-1/4 h-80 w-80 rounded-full bg-cyan-100/80 blur-3xl" />
+
+              <div className="absolute left-1/2 top-1/2 h-[400px] w-[650px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-blue-50/70 blur-[80px]" />
+
+              <div className="absolute left-[5%] top-[28%] h-24 w-24 rounded-full border-[12px] border-blue-100/80" />
+
+              <div className="absolute right-[6%] top-[40%] h-36 w-36 rounded-full border-[16px] border-cyan-100/80" />
+
+              <div className="absolute right-[17%] top-[10%] h-16 w-16 rotate-12 rounded-2xl bg-blue-100/60" />
+
+              <div className="absolute bottom-[12%] left-[17%] h-10 w-10 rounded-full bg-cyan-100/90" />
+
+              <div className="absolute right-[22%] top-[17%] h-3 w-3 rounded-full bg-pink-400/70" />
+              <div className="absolute bottom-[20%] left-[25%] h-3 w-3 rounded-full bg-yellow-400/80" />
+            </div>
+
+            <div className="relative z-10 mx-auto mb-12 max-w-xl text-center">
+              <span className="inline-flex rounded-full border border-blue-100 bg-white px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-[var(--blue)] shadow-sm">
+                Une interface pensée pour le terrain
+              </span>
+
+              <h2 className="mt-4 text-2xl font-bold tracking-tight text-[#101827] sm:text-3xl">
+                Votre imprimerie, partout avec vous.
+              </h2>
+
+              <p className="mt-3 text-sm leading-6 text-slate-500">
+                Travaillez depuis votre ordinateur ou votre téléphone, avec une
+                expérience adaptée à chaque écran.
+              </p>
+            </div>
+
+            <div className="relative z-10 mx-auto max-w-6xl">
+              {/* Desktop mockup */}
+              <div className="relative z-10 mx-auto max-w-5xl">
+                <div className="rounded-[24px] border border-slate-300 bg-[#0b1f3a] p-2 shadow-[0_40px_100px_rgba(15,23,42,0.20)] sm:rounded-[30px]">
+                  <div className="flex h-8 items-center gap-1.5 px-3">
+                    <span className="h-2.5 w-2.5 rounded-full bg-red-400/80" />
+                    <span className="h-2.5 w-2.5 rounded-full bg-yellow-400/80" />
+                    <span className="h-2.5 w-2.5 rounded-full bg-green-400/80" />
+
+                    <div className="mx-auto hidden h-4 w-1/3 rounded-full bg-white/[0.06] sm:block" />
                   </div>
-                  <div className="rounded-xl bg-cyan-400/15 p-2.5 text-cyan-300">
-                    <BarChart3 className="h-5 w-5" />
+
+                  <div className="overflow-hidden rounded-[18px] bg-white sm:rounded-[22px]">
+                    <Image
+                      src="/images/landing/hero/dashboard-desktop.PNG"
+                      alt="Interface Imprim’Brain sur ordinateur"
+                      width={1600}
+                      height={1000}
+                      priority
+                      className="block h-auto w-full"
+                    />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  {[
-                    ["Commandes", "128", ClipboardList],
-                    ["Clients", "84", Users],
-                    ["Paiements", "1,24 M", CreditCard],
-                    ["Stock", "12 alertes", Package],
-                  ].map(([label, value, Icon]) => (
-                    <div key={label as string} className="rounded-xl border border-white/10 bg-white/5 p-4">
-                      <Icon className="mb-5 h-4 w-4 text-cyan-300" />
-                      <p className="text-xs text-slate-400">{label as string}</p>
-                      <p className="mt-1 font-bold text-white">{value as string}</p>
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-3 rounded-xl border border-white/10 bg-white/5 p-4">
-                  <div className="mb-4 flex items-center justify-between">
-                    <span className="text-sm font-semibold text-white">Activité récente</span>
-                    <span className="text-xs text-cyan-300">Cette semaine</span>
-                  </div>
-                  <div className="flex h-28 items-end gap-2">
-                    {[35, 52, 44, 72, 60, 86, 68, 94, 78, 100, 88, 112].map((height, i) => (
-                      <div key={i} className="flex-1 rounded-t-md bg-cyan-400/80" style={{ height: `${height / 1.25}%` }} />
-                    ))}
+              </div>
+
+              {/* Mobile mockup */}
+              <div className="absolute bottom-[-80px] right-[4%] z-30 w-[115px] sm:w-[140px] md:right-[8%] md:w-[155px] lg:bottom-[-105px] lg:right-[10%] lg:w-[185px]">
+                <div className="rounded-[27px] border-[7px] border-[#0b1f3a] bg-[#0b1f3a] p-1 shadow-[0_35px_90px_rgba(15,23,42,0.30)] lg:rounded-[34px] lg:border-[8px]">
+                  <div className="overflow-hidden rounded-[20px] bg-white lg:rounded-[25px]">
+                    <Image
+                      src="/images/landing/hero/dashboard-mobile.PNG"
+                      alt="Interface Imprim’Brain sur mobile"
+                      width={600}
+                      height={1200}
+                      className="block h-auto w-full"
+                    />
                   </div>
                 </div>
               </div>
             </div>
+
+            <div className="h-24 sm:h-28" />
           </div>
         </div>
       </section>
 
-      <section id="fonctionnalites" className="border-y border-slate-100 bg-slate-50/70 py-20">
-        <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          <div className="mx-auto max-w-2xl text-center">
-            <p className="text-sm font-bold uppercase tracking-[.18em] text-cyan-600">Tout au même endroit</p>
-            <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">Les outils essentiels pour votre activité</h2>
-            <p className="mt-4 text-slate-600">Moins de dispersion, plus de visibilité sur vos opérations quotidiennes.</p>
+      {/* =========================================================
+    FEATURES
+    ========================================================= */}
+      <section
+        id="fonctionnalites"
+        className="relative bg-[#f7f9fc] py-20 sm:py-24"
+      >
+        <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-3xl text-center">
+            <p className="text-xs font-bold uppercase tracking-[.2em] text-[var(--blue)]">
+              Fonctionnalités Imprim’Brain
+            </p>
+
+            <h2 className="mt-4 text-3xl font-bold leading-tight tracking-[-.03em] text-[#101827] sm:text-5xl">
+              Tout ce qu’il faut pour gérer votre activité, au même endroit.
+            </h2>
+
+            <p className="mx-auto mt-5 max-w-2xl text-sm leading-7 text-slate-500 sm:text-base">
+              Une expérience claire pour suivre vos opérations quotidiennes sans
+              vous perdre dans des outils dispersés.
+            </p>
           </div>
-          <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {features.map(({ icon: Icon, title, text }) => (
-              <div key={title} className="rounded-2xl border border-slate-200 bg-white p-6 transition duration-200 hover:-translate-y-1 hover:border-cyan-200 hover:shadow-xl hover:shadow-cyan-500/5">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-cyan-50 text-cyan-600">
+
+          <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {features.map(({ icon: Icon, title, text, featured }) => (
+              <article
+                key={title}
+                className={
+                  featured
+                    ? "group min-h-[225px] rounded-[1.5rem] border border-[var(--blue)] bg-gradient-to-br from-[#0b1f3a] to-[var(--blue)] p-6 text-white shadow-xl shadow-blue-900/15 transition duration-300 hover:-translate-y-1"
+                    : "group min-h-[225px] rounded-[1.5rem] border border-slate-200 bg-white p-6 text-[#101827] transition duration-300 hover:-translate-y-1 hover:border-cyan-200 hover:shadow-xl"
+                }
+              >
+                <div
+                  className={
+                    featured
+                      ? "flex h-11 w-11 items-center justify-center rounded-xl bg-white/15 text-cyan-200"
+                      : "flex h-11 w-11 items-center justify-center rounded-xl bg-cyan-50 text-[var(--primary)]"
+                  }
+                >
                   <Icon className="h-5 w-5" />
                 </div>
-                <h3 className="mt-5 text-lg font-bold">{title}</h3>
-                <p className="mt-2 text-sm leading-6 text-slate-600">{text}</p>
-              </div>
+
+                <h3 className="mt-5 text-base font-bold leading-6">{title}</h3>
+
+                <p
+                  className={
+                    featured
+                      ? "mt-3 text-xs leading-6 text-blue-100/80"
+                      : "mt-3 text-xs leading-6 text-slate-500"
+                  }
+                >
+                  {text}
+                </p>
+              </article>
             ))}
           </div>
         </div>
       </section>
 
-      <section id="fonctionnement" className="py-20">
-        <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          <div className="grid gap-14 lg:grid-cols-2 lg:items-center">
+      {/* =========================================================
+          HOW IT WORKS
+          ========================================================= */}
+      <section id="fonctionnement" className="bg-white py-20 sm:py-24">
+        <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
+          <div className="grid items-center gap-14 lg:grid-cols-[.9fr_1.1fr]">
             <div>
-              <p className="text-sm font-bold uppercase tracking-[.18em] text-cyan-600">Simple à utiliser</p>
-              <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">Une gestion pensée pour le terrain</h2>
-              <p className="mt-5 leading-7 text-slate-600">
-                L’objectif est simple : vous permettre de passer moins de temps à
-                chercher des informations et plus de temps à faire avancer votre activité.
+              <p className="text-xs font-bold uppercase tracking-[.2em] text-[var(--blue)]">
+                Comment ça marche
               </p>
-              <div className="mt-8 space-y-6">
-                {steps.map(([number, title, text]) => (
+
+              <h2 className="mt-4 text-3xl font-bold tracking-[-.03em] text-[#101827] sm:text-5xl">
+                Une gestion pensée pour le quotidien.
+              </h2>
+
+              <p className="mt-5 max-w-xl text-sm leading-7 text-slate-500 sm:text-base">
+                L’objectif est simple : réduire les tâches dispersées et vous
+                donner une vision claire de votre activité.
+              </p>
+
+              <div className="mt-9 space-y-6">
+                {steps.map(({ number, title, text }) => (
                   <div key={number} className="flex gap-4">
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-950 text-xs font-bold text-white">{number}</span>
+                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--blue)] text-xs font-bold text-white shadow-lg shadow-blue-600/15">
+                      {number}
+                    </span>
+
                     <div>
-                      <h3 className="font-bold">{title}</h3>
-                      <p className="mt-1 text-sm leading-6 text-slate-600">{text}</p>
+                      <h3 className="font-bold text-[#101827]">{title}</h3>
+
+                      <p className="mt-1 text-sm leading-6 text-slate-500">
+                        {text}
+                      </p>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
-            <div className="rounded-[2rem] border border-cyan-100 bg-cyan-50/60 p-5">
-              <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xl">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+
+            <div className="relative overflow-hidden rounded-[2rem] bg-[#0b1f3a] p-4 shadow-2xl shadow-slate-900/20 sm:p-6">
+              <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-cyan-400/20 blur-3xl" />
+              <div className="absolute -bottom-24 -left-20 h-64 w-64 rounded-full bg-blue-600/20 blur-3xl" />
+
+              <div className="relative rounded-[1.5rem] border border-white/10 bg-white/[.06] p-5 backdrop-blur">
+                <div className="flex items-center justify-between border-b border-white/10 pb-4">
                   <div>
-                    <p className="text-xs text-slate-400">Commande #IB-1048</p>
-                    <p className="mt-1 font-bold">Impression couleur A4</p>
+                    <p className="text-[10px] text-slate-300/60">
+                      Commande #IB-1048
+                    </p>
+
+                    <p className="mt-1 font-bold text-white">
+                      Impression couleur A4
+                    </p>
                   </div>
-                  <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-600">En cours</span>
+
+                  <span className="rounded-full bg-emerald-400/15 px-3 py-1 text-[10px] font-bold text-emerald-300">
+                    En cours
+                  </span>
                 </div>
-                <div className="space-y-3 py-5 text-sm">
+
+                <div className="space-y-4 py-5 text-sm">
                   {[
                     ["Client", "Entreprise ABC"],
                     ["Quantité", "250 feuilles"],
                     ["Total", "25 000 FCFA"],
                     ["Encaissé", "15 000 FCFA"],
-                  ].map(([a, b]) => (
-                    <div key={a} className="flex justify-between gap-4">
-                      <span className="text-slate-500">{a}</span>
-                      <span className="font-semibold">{b}</span>
+                  ].map(([label, value]) => (
+                    <div key={label} className="flex justify-between gap-4">
+                      <span className="text-slate-300/60">{label}</span>
+                      <span className="font-semibold text-white">{value}</span>
                     </div>
                   ))}
                 </div>
-                <div className="rounded-xl bg-slate-50 p-4">
+
+                <div className="rounded-2xl bg-white/[.08] p-4">
                   <div className="flex items-center gap-3">
-                    <ShieldCheck className="h-5 w-5 text-cyan-500" />
+                    <ShieldCheck className="h-5 w-5 text-[var(--primary)]" />
+
                     <div>
-                      <p className="text-sm font-bold">Suivi centralisé</p>
-                      <p className="text-xs text-slate-500">Client, commande, paiement et stock au même endroit.</p>
+                      <p className="text-sm font-bold text-white">
+                        Suivi centralisé
+                      </p>
+
+                      <p className="text-xs text-slate-300/60">
+                        Client, commande, paiement et stock au même endroit.
+                      </p>
                     </div>
                   </div>
+                </div>
+
+                <div className="mt-3 flex items-center justify-end gap-2 text-[10px] font-semibold text-cyan-200">
+                  <FileText className="h-3.5 w-3.5" />
+                  Reçu professionnel prêt à imprimer
                 </div>
               </div>
             </div>
@@ -224,56 +441,133 @@ export function LandingPage() {
         </div>
       </section>
 
-      <section id="tarifs" className="bg-slate-950 py-20 text-white">
-        <div className="mx-auto max-w-4xl px-6 text-center lg:px-8">
-          <p className="text-sm font-bold uppercase tracking-[.18em] text-cyan-300">Une gestion plus simple</p>
-          <h2 className="mt-3 text-3xl font-bold sm:text-4xl">Commencez à structurer votre imprimerie</h2>
-          <p className="mx-auto mt-5 max-w-2xl leading-7 text-slate-300">
-            Centralisez vos opérations dans une seule application et donnez à votre équipe un espace de travail clair.
+      {/* =========================================================
+          PRODUCT / PRICING CTA
+          ========================================================= */}
+      <section id="tarifs" className="bg-[#0b1f3a] py-20 text-white sm:py-24">
+        <div className="mx-auto max-w-5xl px-5 text-center sm:px-6 lg:px-8">
+          <p className="text-xs font-bold uppercase tracking-[.2em] text-[var(--primary)]">
+            Votre espace de gestion
           </p>
-          <div className="mx-auto mt-10 max-w-md rounded-3xl border border-white/10 bg-white/[.06] p-7 text-left">
-            <p className="text-sm font-semibold text-cyan-300">Imprim’Brain</p>
-            <h3 className="mt-2 text-2xl font-bold">Votre espace de gestion</h3>
-            <ul className="mt-6 space-y-3 text-sm text-slate-300">
-              {["Clients et prestations", "Commandes et paiements", "Gestion du stock", "Reçus professionnels", "Utilisateurs et permissions"].map((x) => (
-                <li key={x} className="flex items-center gap-2"><Check className="h-4 w-4 text-cyan-300" /> {x}</li>
+
+          <h2 className="mt-4 text-3xl font-bold tracking-[-.03em] sm:text-5xl">
+            Structurez votre imprimerie dès maintenant.
+          </h2>
+
+          <p className="mx-auto mt-5 max-w-2xl text-sm leading-7 text-slate-300/70 sm:text-base">
+            Centralisez vos opérations dans une seule application et donnez à
+            votre équipe un espace de travail clair.
+          </p>
+
+          <div className="mx-auto mt-10 max-w-xl rounded-[2rem] border border-white/10 bg-white/[.07] p-7 text-left shadow-2xl backdrop-blur sm:p-9">
+            <div className="flex items-start justify-between gap-6">
+              <div>
+                <p className="text-xs font-bold text-[var(--primary)]">
+                  IMPRIM’BRAIN
+                </p>
+
+                <h3 className="mt-2 text-2xl font-bold">
+                  Une gestion simple et centralisée
+                </h3>
+              </div>
+
+              <div className="rounded-2xl bg-white/10 p-3">
+                <Zap className="h-5 w-5 text-[var(--primary)]" />
+              </div>
+            </div>
+
+            <ul className="mt-7 grid gap-3 sm:grid-cols-2">
+              {[
+                "Clients et prestations",
+                "Commandes et paiements",
+                "Gestion du stock",
+                "Reçus professionnels",
+                "Utilisateurs et permissions",
+                "Journal des opérations",
+              ].map((item) => (
+                <li
+                  key={item}
+                  className="flex items-center gap-2 text-sm text-slate-300/75"
+                >
+                  <Check className="h-4 w-4 shrink-0 text-[var(--primary)]" />
+                  {item}
+                </li>
               ))}
             </ul>
-            <a href="/inscription" className="mt-7 flex items-center justify-center gap-2 rounded-xl bg-cyan-400 px-5 py-3 font-bold text-slate-950 transition hover:bg-cyan-300">
-              Créer mon espace <ArrowRight className="h-4 w-4" />
+
+            <a
+              href="/inscription"
+              className="mt-8 flex items-center justify-center gap-2 rounded-full bg-[var(--primary)] px-5 py-3.5 text-sm font-bold text-white transition hover:bg-[var(--primary-hover)]"
+            >
+              Créer mon espace
+              <ArrowRight className="h-4 w-4" />
             </a>
           </div>
         </div>
       </section>
 
-      <section id="faq" className="py-20">
-        <div className="mx-auto max-w-3xl px-6 lg:px-8">
+      {/* =========================================================
+          FAQ
+          ========================================================= */}
+      <section id="faq" className="bg-[#f7f9fc] py-20 sm:py-24">
+        <div className="mx-auto max-w-3xl px-5 sm:px-6 lg:px-8">
           <div className="text-center">
-            <p className="text-sm font-bold uppercase tracking-[.18em] text-cyan-600">FAQ</p>
-            <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">Questions fréquentes</h2>
+            <p className="text-xs font-bold uppercase tracking-[.2em] text-[var(--blue)]">
+              FAQ
+            </p>
+
+            <h2 className="mt-4 text-3xl font-bold tracking-[-.03em] text-[#101827] sm:text-5xl">
+              Questions fréquentes
+            </h2>
           </div>
-          <div className="mt-10 divide-y divide-slate-200 rounded-2xl border border-slate-200 bg-white">
-            {faqs.map(([question, answer]) => (
-              <details key={question} className="group p-5">
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-bold">
+
+          <div className="mt-10 divide-y divide-slate-200 overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white">
+            {faqs.map(({ question, answer }) => (
+              <details key={question} className="group p-5 sm:p-6">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-bold text-[#101827]">
                   {question}
+
                   <ChevronDown className="h-5 w-5 shrink-0 text-slate-400 transition group-open:rotate-180" />
                 </summary>
-                <p className="mt-3 max-w-2xl pr-8 text-sm leading-6 text-slate-600">{answer}</p>
+
+                <p className="mt-3 max-w-2xl pr-8 text-sm leading-6 text-slate-500">
+                  {answer}
+                </p>
               </details>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="px-6 pb-20 lg:px-8">
-        <div className="mx-auto max-w-7xl overflow-hidden rounded-[2rem] bg-cyan-500 px-7 py-12 text-center text-white shadow-2xl shadow-cyan-500/20 sm:px-12">
-          <Zap className="mx-auto h-8 w-8" />
-          <h2 className="mt-4 text-3xl font-bold sm:text-4xl">Prêt à mieux gérer votre imprimerie ?</h2>
-          <p className="mx-auto mt-4 max-w-2xl text-cyan-50">Passez d’une gestion dispersée à un espace de travail centralisé.</p>
-          <a href="/inscription" className="mt-7 inline-flex items-center gap-2 rounded-xl bg-white px-6 py-3.5 font-bold text-cyan-700 transition hover:bg-cyan-50">
-            Commencer maintenant <ArrowRight className="h-5 w-5" />
-          </a>
+      {/* =========================================================
+          FINAL CTA
+          ========================================================= */}
+      <section className="px-5 pb-20 pt-4 sm:px-6 lg:px-8">
+        <div className="relative mx-auto max-w-7xl overflow-hidden rounded-[2.25rem] bg-gradient-to-r from-[#0b1f3a] via-[#1557d6] to-[#06b6d4] px-7 py-14 text-center text-white shadow-2xl shadow-blue-700/20 sm:px-12">
+          <div className="absolute -left-16 -top-24 h-56 w-56 rounded-full bg-cyan-300/20 blur-3xl" />
+          <div className="absolute -bottom-24 -right-16 h-56 w-56 rounded-full bg-blue-300/20 blur-3xl" />
+
+          <div className="relative">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10">
+              <Sparkles className="h-6 w-6 text-cyan-200" />
+            </div>
+
+            <h2 className="mt-4 text-3xl font-bold sm:text-4xl">
+              Prêt à mieux gérer votre imprimerie ?
+            </h2>
+
+            <p className="mx-auto mt-4 max-w-2xl text-sm text-blue-50/80 sm:text-base">
+              Passez d’une gestion dispersée à un espace de travail centralisé.
+            </p>
+
+            <a
+              href="/inscription"
+              className="mt-7 inline-flex items-center gap-2 rounded-full bg-white px-6 py-3.5 text-sm font-bold text-[var(--blue)] transition hover:bg-cyan-50"
+            >
+              Commencer maintenant
+              <ArrowRight className="h-4 w-4" />
+            </a>
+          </div>
         </div>
       </section>
 

@@ -53,7 +53,7 @@ export async function POST(req: Request) {
 
     await ACCOUNT_STORE.delete(accountLimitKey);
     await createSession(user.id);
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, mustChangePassword: user.mustChangePassword });
   } catch (error) {
     return apiError(error);
   }

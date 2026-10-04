@@ -12,6 +12,7 @@ export async function GET() {
         email: user.email,
         role: user.role,
         organizationId: user.organizationId,
+        mustChangePassword: user.mustChangePassword,
         permissions: user.permissions.map(({ permission, allowed }) => ({ permission, allowed })),
       } : null,
     });
