@@ -27,17 +27,23 @@ function paymentLabel(method: string) {
   return labels[method] || method;
 }
 
-export function Receipt({
-  data,
-}: ReceiptProps) {
-  const change =
+export function Receipt({ data }: ReceiptProps) {
+  const cashGiven = data.cashGiven ?? null;
+
+  const changeDue =
+    data.changeDue ??
     data.change ??
-    (data.cashGiven != null
-      ? Math.max(
-          0,
-          data.cashGiven - data.total,
-        )
-      : null);
+    (cashGiven != null
+      ? Math.max(0, cashGiven - data.total)
+      : 0);
+
+  const changeReturned =
+    data.changeReturned ??
+    (data.change != null ? data.change : 0);
+
+  const changeRemaining =
+    data.changeRemaining ??
+    Math.max(0, changeDue - changeReturned);
 
   return (
     <article
@@ -45,27 +51,27 @@ export function Receipt({
       className="mx-auto w-full max-w-[820px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
     >
       {/* HEADER */}
-
       <header className="border-b border-slate-200 px-6 py-7 sm:px-8">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-start gap-4">
             {data.company.logo ? (
-              <Image
-                src={data.company.logo}
-                alt={data.company.name}
-                width={80}
-                height={80}
-                className="h-16 w-16 rounded-xl object-contain"
-              />
+              <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white p-2">
+                <Image
+                  src={data.company.logo}
+                  alt={`Logo ${data.company.name}`}
+                  width={80}
+                  height={80}
+                  className="h-full w-full object-contain"
+                  unoptimized
+                />
+              </div>
             ) : (
-              <div className="grid h-16 w-16 place-items-center rounded-xl bg-cyan-500 text-xl font-black text-white">
-                {data.company.name
-                  .charAt(0)
-                  .toUpperCase()}
+              <div className="grid h-20 w-20 shrink-0 place-items-center rounded-xl bg-cyan-500 text-2xl font-black text-white">
+                {data.company.name.charAt(0).toUpperCase()}
               </div>
             )}
 
-            <div>
+            <div className="min-w-0">
               <h1 className="text-xl font-black text-slate-900">
                 {data.company.name}
               </h1>
@@ -82,15 +88,12 @@ export function Receipt({
                 )}
 
                 {data.company.phone && (
-                  <p>
-                    Tél. : {data.company.phone}
-                  </p>
+                  <p>Tél. : {data.company.phone}</p>
                 )}
 
                 {data.company.whatsapp && (
                   <p>
-                    WhatsApp :{" "}
-                    {data.company.whatsapp}
+                    WhatsApp : {data.company.whatsapp}
                   </p>
                 )}
 
@@ -117,8 +120,7 @@ export function Receipt({
         </div>
       </header>
 
-      {/* CLIENT */}
-
+      {/* CLIENT / PAIEMENT */}
       <section className="grid gap-4 border-b border-slate-100 px-6 py-5 sm:grid-cols-2 sm:px-8">
         <div>
           <p className="text-[9px] font-black uppercase tracking-wider text-slate-400">
@@ -136,8 +138,7 @@ export function Receipt({
 
             {data.client.whatsapp && (
               <p>
-                WhatsApp :{" "}
-                {data.client.whatsapp}
+                WhatsApp : {data.client.whatsapp}
               </p>
             )}
 
@@ -153,22 +154,19 @@ export function Receipt({
           </p>
 
           <p className="mt-1 text-sm font-black text-slate-900">
-            {paymentLabel(
-              data.payment.method,
-            )}
+            {paymentLabel(data.payment.method)}
           </p>
 
           <p className="mt-1 text-[10px] text-slate-500">
-            Montant enregistré :{" "}
+            Mode :{" "}
             <strong>
-              {fcfa(data.payment.amount)}
+              {paymentLabel(data.payment.method)}
             </strong>
           </p>
         </div>
       </section>
 
       {/* SERVICES */}
-
       <section className="px-6 py-5 sm:px-8">
         <div className="overflow-hidden rounded-xl border border-slate-200">
           <table className="w-full border-collapse text-sm">
@@ -193,43 +191,39 @@ export function Receipt({
             </thead>
 
             <tbody>
-              {data.lines.map(
-                (line, index) => (
-                  <tr
-                    key={`${line.service}-${index}`}
-                    className="border-t border-slate-100"
-                  >
-                    <td className="px-4 py-3 font-semibold text-slate-800">
-                      {line.service}
-                    </td>
+              {data.lines.map((line, index) => (
+                <tr
+                  key={`${line.service}-${index}`}
+                  className="border-t border-slate-100"
+                >
+                  <td className="px-4 py-3 font-semibold text-slate-800">
+                    {line.service}
+                  </td>
 
-                    <td className="px-4 py-3 text-center text-slate-600">
-                      {line.quantity}{" "}
-                      {line.unit}
-                    </td>
+                  <td className="px-4 py-3 text-center text-slate-600">
+                    {line.quantity} {line.unit}
+                  </td>
 
-                    <td className="px-4 py-3 text-right text-slate-600">
-                      {fcfa(line.price)}
-                    </td>
+                  <td className="px-4 py-3 text-right text-slate-600">
+                    {fcfa(line.price)}
+                  </td>
 
-                    <td className="px-4 py-3 text-right font-bold text-slate-900">
-                      {fcfa(line.total)}
-                    </td>
-                  </tr>
-                ),
-              )}
+                  <td className="px-4 py-3 text-right font-bold text-slate-900">
+                    {fcfa(line.total)}
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
       </section>
 
-      {/* TOTALS */}
-
+      {/* PAIEMENT / ACOMPTE / MONNAIE */}
       <section className="px-6 pb-6 sm:px-8">
         <div className="ml-auto w-full max-w-sm space-y-3">
           <div className="flex justify-between text-sm">
             <span className="text-slate-500">
-              Total
+              Total prestation
             </span>
 
             <strong>
@@ -237,18 +231,20 @@ export function Receipt({
             </strong>
           </div>
 
-          {data.cashGiven != null && (
+          {/* Somme réellement remise */}
+          {cashGiven != null && cashGiven > 0 && (
             <div className="flex justify-between text-sm">
               <span className="text-slate-500">
                 Somme remise
               </span>
 
               <strong>
-                {fcfa(data.cashGiven)}
+                {fcfa(cashGiven)}
               </strong>
             </div>
           )}
 
+          {/* Montant encaissé */}
           <div className="flex justify-between text-sm">
             <span className="text-slate-500">
               Montant encaissé
@@ -259,19 +255,81 @@ export function Receipt({
             </strong>
           </div>
 
-          {change != null &&
-            change > 0 && (
-              <div className="flex justify-between text-sm">
-                <span className="font-semibold text-slate-700">
-                  Monnaie à rendre
-                </span>
+          {/* ACOMPTE / reste */}
+          {data.paid > 0 && data.paid < data.total && (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+              <div className="flex justify-between gap-4">
+                <div>
+                  <p className="text-[9px] font-black uppercase tracking-wide text-amber-700">
+                    Acompte enregistré
+                  </p>
 
-                <strong className="text-emerald-600">
-                  {fcfa(change)}
+                  <p className="mt-1 text-[10px] text-amber-700">
+                    Une partie de la prestation a été réglée.
+                  </p>
+                </div>
+
+                <strong className="text-sm font-black text-amber-700">
+                  {fcfa(data.paid)}
                 </strong>
               </div>
-            )}
 
+              <div className="mt-3 flex justify-between border-t border-amber-200 pt-2 text-xs">
+                <span className="font-semibold text-amber-700">
+                  Reste à payer
+                </span>
+
+                <strong className="text-amber-700">
+                  {fcfa(data.remaining)}
+                </strong>
+              </div>
+            </div>
+          )}
+
+          {/* MONNAIE */}
+          {changeDue > 0 && (
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+              <p className="text-[9px] font-black uppercase tracking-wide text-emerald-700">
+                Monnaie
+              </p>
+
+              <div className="mt-2 space-y-2">
+                <div className="flex justify-between text-xs">
+                  <span className="text-slate-600">
+                    Monnaie totale due
+                  </span>
+
+                  <strong className="text-emerald-700">
+                    {fcfa(changeDue)}
+                  </strong>
+                </div>
+
+                <div className="flex justify-between text-xs">
+                  <span className="text-slate-600">
+                    Monnaie remise
+                  </span>
+
+                  <strong>
+                    {fcfa(changeReturned)}
+                  </strong>
+                </div>
+
+                {changeRemaining > 0 && (
+                  <div className="flex justify-between border-t border-emerald-200 pt-2 text-xs">
+                    <span className="font-semibold text-amber-700">
+                      Reste à remettre
+                    </span>
+
+                    <strong className="text-amber-700">
+                      {fcfa(changeRemaining)}
+                    </strong>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* SOLDE */}
           <div className="flex justify-between border-t border-slate-200 pt-3">
             <span className="font-black text-slate-800">
               Reste à payer
@@ -291,15 +349,13 @@ export function Receipt({
       </section>
 
       {/* FOOTER */}
-
       <footer className="border-t border-slate-100 bg-slate-50 px-6 py-5 text-center sm:px-8">
         <p className="text-xs font-bold text-slate-700">
           Merci pour votre confiance.
         </p>
 
         <p className="mt-1 text-[10px] text-slate-400">
-          Conservez ce reçu pour toute
-          demande concernant cette prestation.
+          Conservez ce reçu pour toute demande concernant cette prestation.
         </p>
       </footer>
     </article>

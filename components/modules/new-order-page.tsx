@@ -11,7 +11,6 @@ import {
   UserPlus,
   UserRound,
   WalletCards,
-  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/page-header";
@@ -83,11 +82,11 @@ export default function NewOrder({ ctRole }: { ctRole: CTRole }) {
   ]);
 
   const [payment, setPayment] = useState("");
+  const [changeReturned, setChangeReturned] = useState("");
   const [method, setMethod] = useState("CASH");
 
   const [saving, setSaving] = useState(false);
-  const [creatingClient, setCreatingClient] = useState(false);
-  const [clientSaving, setClientSaving] = useState(false);
+  const [newClientMode, setNewClientMode] = useState(false);
   const [clientForm, setClientForm] =
     useState<NewClientForm>(emptyClient);
   const [loading, setLoading] = useState(true);
@@ -95,36 +94,36 @@ export default function NewOrder({ ctRole }: { ctRole: CTRole }) {
   const [receiptOpen, setReceiptOpen] = useState(false);
 
 
+  async function loadData() {
+    setLoading(true);
+    try {
+      const [clientsResponse, servicesResponse] = await Promise.all([
+        fetch("/api/clients", { cache: "no-store" }),
+        fetch("/api/services", { cache: "no-store" }),
+      ]);
+
+      if (!clientsResponse.ok || !servicesResponse.ok) {
+        throw new Error("Impossible de charger les données.");
+      }
+
+      const [clientsData, servicesData] = await Promise.all([
+        clientsResponse.json(),
+        servicesResponse.json(),
+      ]);
+
+      setClients(Array.isArray(clientsData) ? clientsData : []);
+      setServices(Array.isArray(servicesData) ? servicesData : []);
+    } catch {
+      toast.error("Impossible de charger les données.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   useEffect(() => {
-    Promise.all([
-      fetch("/api/clients"),
-      fetch("/api/services"),
-    ])
-      .then(async ([clientsResponse, servicesResponse]) => {
-        if (!clientsResponse.ok || !servicesResponse.ok) {
-          throw new Error();
-        }
-
-        const [clientsData, servicesData] = await Promise.all([
-          clientsResponse.json(),
-          servicesResponse.json(),
-        ]);
-
-        setClients(
-          Array.isArray(clientsData) ? clientsData : [],
-        );
-
-        setServices(
-          Array.isArray(servicesData) ? servicesData : [],
-        );
-      })
-      .catch(() => {
-        toast.error("Impossible de charger les données.");
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+    void loadData();
   }, []);
+
 
   const total = useMemo(
     () =>
@@ -145,20 +144,12 @@ export default function NewOrder({ ctRole }: { ctRole: CTRole }) {
   );
 
   /*
-   * SOMME REMISE
+   * Paiement et monnaie.
    *
-   * Vide = 0
-   *
-   * Total 93 000
-   * Remis 60 000
-   * Encaissé 60 000
-   * Reste 33 000
-   *
-   * Total 93 000
-   * Remis 100 000
-   * Encaissé 93 000
-   * Reste 0
-   * Monnaie 7 000
+   * La somme remise représente ce que le client donne réellement.
+   * Le montant encaissé est plafonné au total de la prestation.
+   * La monnaie due est la différence entre la somme remise et le total.
+   * La monnaie remise permet d'indiquer ce qui a réellement été rendu.
    */
   const given =
     payment.trim() === ""
@@ -166,120 +157,38 @@ export default function NewOrder({ ctRole }: { ctRole: CTRole }) {
       : Math.max(0, Number(payment));
 
   const paid = Math.min(given, total);
-
   const remaining = Math.max(0, total - paid);
 
-  const change =
+  const changeDue =
     method === "CASH"
       ? Math.max(0, given - total)
       : 0;
 
-  function update(
-    index: number,
-    patch: Partial<Line>,
-  ) {
+  const returned =
+    method === "CASH"
+      ? Math.min(
+          changeDue,
+          Math.max(0, Number(changeReturned || 0)),
+        )
+      : 0;
+
+  const changeRemaining = Math.max(0, changeDue - returned);
+
+  function update(index: number, patch: Partial<Line>) {
     setLines((current) =>
       current.map((line, i) =>
         i === index
-          ? {
-              ...line,
-              ...patch,
-            }
+          ? { ...line, ...patch }
           : line,
       ),
     );
   }
 
-  function updateClient(
-    field: keyof NewClientForm,
-    value: string,
-  ) {
+  function updateClient(field: keyof NewClientForm, value: string) {
     setClientForm((current) => ({
       ...current,
       [field]: value,
     }));
-  }
-
-  function openClientForm() {
-    setClientForm(emptyClient);
-    setCreatingClient(true);
-  }
-
-  function closeClientForm() {
-    if (clientSaving) return;
-
-    setCreatingClient(false);
-    setClientForm(emptyClient);
-  }
-
-
-  async function createClient(e: React.FormEvent) {
-    e.preventDefault();
-
-    if (!clientForm.name.trim()) {
-      toast.error("Le nom du client est obligatoire.");
-      return;
-    }
-
-    try {
-      setClientSaving(true);
-
-      const response = await fetch("/api/clients", {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-        },
-        body: JSON.stringify({
-          name: clientForm.name.trim(),
-          phone: clientForm.phone.trim() || null,
-          whatsapp:
-            clientForm.whatsapp.trim() || null,
-          email: clientForm.email.trim() || null,
-        }),
-      });
-
-      const data = await response
-        .json()
-        .catch(() => null);
-
-      if (!response.ok) {
-        throw new Error(
-          data?.error ||
-            "Impossible de créer le client.",
-        );
-      }
-
-      const newClient: Client =
-        data?.client || data;
-
-      if (!newClient?.id) {
-        throw new Error(
-          "Le client a été créé mais sa référence est introuvable.",
-        );
-      }
-
-      setClients((current) => [
-        newClient,
-        ...current,
-      ]);
-
-      setClientId(newClient.id);
-
-      setCreatingClient(false);
-      setClientForm(emptyClient);
-
-      toast.success(
-        "Client ajouté et sélectionné.",
-      );
-    } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Impossible de créer le client.",
-      );
-    } finally {
-      setClientSaving(false);
-    }
   }
 
   async function loadReceipt(orderId: unknown) {
@@ -303,76 +212,81 @@ export default function NewOrder({ ctRole }: { ctRole: CTRole }) {
     e.preventDefault();
 
     const valid = lines.filter(
-      (line) =>
-        line.serviceId &&
-        line.quantity > 0,
+      (line) => line.serviceId && line.quantity > 0,
     );
 
-    if (!clientId) {
-      toast.error(
-        "Veuillez sélectionner un client.",
-      );
+    if (!clientId && !newClientMode) {
+      toast.error("Sélectionnez un client ou activez l'ajout d'un nouveau client.");
+      return;
+    }
+
+    if (newClientMode && !clientForm.name.trim()) {
+      toast.error("Le nom du nouveau client est obligatoire.");
       return;
     }
 
     if (!valid.length || total <= 0) {
-      toast.error(
-        "Ajoutez au moins un service valide.",
-      );
+      toast.error("Ajoutez au moins un service valide.");
       return;
     }
 
-    if (
-      payment.trim() !== "" &&
-      (!Number.isFinite(Number(payment)) ||
-        Number(payment) < 0)
-    ) {
-      toast.error(
-        "La somme remise doit être un montant valide.",
-      );
+    if (!Number.isFinite(given) || given < 0) {
+      toast.error("La somme remise doit être un montant valide.");
+      return;
+    }
+
+    if (!Number.isFinite(returned) || returned < 0 || returned > changeDue) {
+      toast.error("La monnaie remise doit être comprise entre 0 et la monnaie due.");
+      return;
+    }
+
+    if (method !== "CASH" && (given > total || changeReturned.trim() !== "")) {
+      if (given > total) {
+        toast.error("Une monnaie ne peut être calculée que pour un paiement en espèces.");
+      } else {
+        toast.error("La monnaie remise ne concerne que les paiements en espèces.");
+      }
       return;
     }
 
     try {
       setSaving(true);
 
-      const response = await fetch(
-        "/api/orders",
-        {
-          method: "POST",
-          headers: {
-            "content-type": "application/json",
-          },
-          body: JSON.stringify({
-            clientId,
-            lines: valid,
-            payment: paid,
-            method,
-          }),
+      const response = await fetch("/api/orders", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
         },
-      );
+        body: JSON.stringify({
+          clientId: newClientMode ? null : clientId || null,
+          newClient: newClientMode
+            ? {
+                name: clientForm.name.trim(),
+                phone: clientForm.phone.trim() || null,
+                whatsapp: clientForm.whatsapp.trim() || null,
+                email: clientForm.email.trim() || null,
+              }
+            : null,
+          lines: valid,
+          payment: paid,
+          method,
+          cashGiven: method === "CASH" ? given : 0,
+          changeDue,
+          changeReturned: returned,
+          changeRemaining,
+        }),
+      });
 
-      const data = await response
-        .json()
-        .catch(() => null);
+      const data = await response.json().catch(() => null);
 
       if (!response.ok) {
         throw new Error(
-          data?.error ||
-            "Impossible d'enregistrer la prestation.",
+          data?.error || "Impossible d'enregistrer la prestation.",
         );
       }
 
-      toast.success(
-        "Prestation enregistrée.",
-      );
-
-      /*
-       * IMPORTANT :
-       * aucune redirection vers /recu.
-       *
-       * Le reçu s'ouvre directement dans le modal.
-       */
+      await loadData();
+      toast.success("Prestation enregistrée.");
       await loadReceipt(data?.id);
     } catch (error) {
       toast.error(
@@ -384,6 +298,7 @@ export default function NewOrder({ ctRole }: { ctRole: CTRole }) {
       setSaving(false);
     }
   }
+
 
   const selectedClient = clients.find(
     (client) => client.id === clientId,
@@ -406,103 +321,163 @@ export default function NewOrder({ ctRole }: { ctRole: CTRole }) {
             {/* CLIENT */}
 
             <section className="card overflow-hidden">
-              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
+              <div className="border-b border-slate-100 px-5 py-4">
                 <div className="flex items-center gap-3">
                   <div className="grid size-9 place-items-center rounded-xl bg-cyan-50 text-cyan-600">
                     <UserRound size={17} />
                   </div>
-
                   <div>
-                    <h2 className="text-sm font-black">
-                      Client
-                    </h2>
-
+                    <h2 className="text-sm font-black">Client</h2>
                     <p className="text-[10px] text-slate-400">
-                      Sélectionnez un client ou créez-en un directement.
+                      Choisissez un client existant ou créez-le directement dans cette prestation.
                     </p>
                   </div>
                 </div>
-
-                <button
-                  type="button"
-                  onClick={openClientForm}
-                  className="btn inline-flex items-center gap-1.5 border-cyan-200 bg-cyan-50 text-cyan-700 hover:bg-cyan-100"
-                >
-                  <UserPlus size={14} />
-                  Nouveau client
-                </button>
               </div>
 
-              <div className="p-5">
-                <label
-                  htmlFor="client"
-                  className="label"
-                >
-                  Client{" "}
-                  <span className="text-red-500">
-                    *
-                  </span>
-                </label>
+              <div className="space-y-5 p-5">
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <button
+                    type="button"
+                    onClick={() => setNewClientMode(false)}
+                    className={`rounded-xl border px-4 py-3 text-left transition ${
+                      !newClientMode
+                        ? "border-cyan-300 bg-cyan-50 text-cyan-800"
+                        : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                    }`}
+                  >
+                    <span className="block text-xs font-black">Client existant</span>
+                    <span className="mt-0.5 block text-[10px] text-slate-400">
+                      Sélectionner dans la base clients
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNewClientMode(true);
+                      setClientId("");
+                    }}
+                    className={`rounded-xl border px-4 py-3 text-left transition ${
+                      newClientMode
+                        ? "border-cyan-300 bg-cyan-50 text-cyan-800"
+                        : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                    }`}
+                  >
+                    <span className="flex items-center gap-1.5 text-xs font-black">
+                      <UserPlus size={14} /> Nouveau client
+                    </span>
+                    <span className="mt-0.5 block text-[10px] text-slate-400">
+                      Les informations seront envoyées avec la prestation
+                    </span>
+                  </button>
+                </div>
 
-                <select
-                  id="client"
-                  className="input"
-                  value={clientId}
-                  onChange={(e) =>
-                    setClientId(e.target.value)
-                  }
-                  disabled={loading}
-                  required
-                >
-                  <option value="">
-                    Sélectionner un client
-                  </option>
-
-                  {clients.map((client) => (
-                    <option
-                      key={client.id}
-                      value={client.id}
+                {!newClientMode ? (
+                  <div>
+                    <label htmlFor="client" className="label">
+                      Client <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      id="client"
+                      className="input"
+                      value={clientId}
+                      onChange={(e) => setClientId(e.target.value)}
+                      disabled={loading}
+                      required={!newClientMode}
                     >
-                      {client.name}
-                      {client.whatsapp ||
-                      client.phone
-                        ? ` — ${
-                            client.whatsapp ||
-                            client.phone
-                          }`
-                        : ""}
-                    </option>
-                  ))}
-                </select>
+                      <option value="">Sélectionner un client</option>
+                      {clients.map((client) => (
+                        <option key={client.id} value={client.id}>
+                          {client.name}
+                          {client.whatsapp || client.phone
+                            ? ` — ${client.whatsapp || client.phone}`
+                            : ""}
+                        </option>
+                      ))}
+                    </select>
 
-                {selectedClient && (
-                  <div className="mt-3 flex items-center gap-3 rounded-xl border border-cyan-100 bg-cyan-50/60 px-3.5 py-3">
-                    <div className="grid size-9 shrink-0 place-items-center rounded-full bg-cyan-500 text-xs font-black text-white">
-                      {(selectedClient.name ||
-                        "Client")
-                        .trim()
-                        .split(/\s+/)
-                        .filter(Boolean)
-                        .map((part) =>
-                          part.charAt(0),
-                        )
-                        .slice(0, 2)
-                        .join("")
-                        .toUpperCase() || "C"}
+                    {selectedClient && (
+                      <div className="mt-3 flex items-center gap-3 rounded-xl border border-cyan-100 bg-cyan-50/60 px-3.5 py-3">
+                        <div className="grid size-9 shrink-0 place-items-center rounded-full bg-cyan-500 text-xs font-black text-white">
+                          {selectedClient.name
+                            .trim()
+                            .split(/\s+/)
+                            .filter(Boolean)
+                            .map((part) => part.charAt(0))
+                            .slice(0, 2)
+                            .join("")
+                            .toUpperCase() || "C"}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="truncate text-xs font-black text-slate-800">
+                            {selectedClient.name}
+                          </p>
+                          <p className="truncate text-[10px] text-slate-500">
+                            {selectedClient.phone || selectedClient.whatsapp || selectedClient.email || "Client enregistré"}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-4 rounded-2xl border border-cyan-100 bg-cyan-50/40 p-4">
+                    <div className="flex items-center gap-2">
+                      <div className="grid size-8 place-items-center rounded-lg bg-cyan-500 text-white">
+                        <UserPlus size={15} />
+                      </div>
+                      <div>
+                        <p className="text-xs font-black text-slate-800">Nouveau client</p>
+                        <p className="text-[10px] text-slate-500">
+                          Aucun enregistrement séparé : les données partent avec la prestation.
+                        </p>
+                      </div>
                     </div>
 
-                    <div className="min-w-0">
-                      <p className="truncate text-xs font-black text-slate-800">
-                        {selectedClient.name ||
-                          "Client"}
-                      </p>
+                    <div>
+                      <label className="label">
+                        Nom complet <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        className="input h-11"
+                        value={clientForm.name}
+                        onChange={(e) => updateClient("name", e.target.value)}
+                        placeholder="Ex. Kouassi Jean"
+                        required={newClientMode}
+                      />
+                    </div>
 
-                      <p className="truncate text-[10px] text-slate-500">
-                        {selectedClient.phone ||
-                          selectedClient.whatsapp ||
-                          selectedClient.email ||
-                          "Client enregistré"}
-                      </p>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div>
+                        <label className="label">Téléphone</label>
+                        <input
+                          className="input h-11"
+                          type="tel"
+                          value={clientForm.phone}
+                          onChange={(e) => updateClient("phone", e.target.value)}
+                          placeholder="07 00 00 00 00"
+                        />
+                      </div>
+                      <div>
+                        <label className="label">WhatsApp</label>
+                        <input
+                          className="input h-11"
+                          type="tel"
+                          value={clientForm.whatsapp}
+                          onChange={(e) => updateClient("whatsapp", e.target.value)}
+                          placeholder="07 00 00 00 00"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="label">E-mail</label>
+                      <input
+                        className="input h-11"
+                        type="email"
+                        value={clientForm.email}
+                        onChange={(e) => updateClient("email", e.target.value)}
+                        placeholder="client@exemple.com"
+                      />
                     </div>
                   </div>
                 )}
@@ -725,14 +700,10 @@ export default function NewOrder({ ctRole }: { ctRole: CTRole }) {
                 <div className="grid size-9 place-items-center rounded-xl bg-violet-50 text-violet-600">
                   <CreditCard size={17} />
                 </div>
-
                 <div>
-                  <h2 className="text-sm font-black">
-                    Paiement
-                  </h2>
-
+                  <h2 className="text-sm font-black">Paiement</h2>
                   <p className="text-[10px] text-slate-400">
-                    Indiquez la somme réellement remise par le client.
+                    Enregistrez ce que le client remet et, en espèces, ce qui lui est réellement rendu.
                   </p>
                 </div>
               </div>
@@ -740,13 +711,7 @@ export default function NewOrder({ ctRole }: { ctRole: CTRole }) {
               <div className="space-y-4 p-5">
                 <div className="grid gap-4 md:grid-cols-2">
                   <div>
-                    <label className="label">
-                      Somme remise{" "}
-                      <span className="text-[9px] font-normal normal-case text-slate-400">
-                        (facultatif)
-                      </span>
-                    </label>
-
+                    <label className="label">Somme remise</label>
                     <div className="relative">
                       <input
                         className="input h-11 pr-16 text-base font-bold"
@@ -754,113 +719,128 @@ export default function NewOrder({ ctRole }: { ctRole: CTRole }) {
                         min="0"
                         step="1"
                         value={payment}
-                        onChange={(e) =>
-                          setPayment(
-                            e.target.value,
-                          )
-                        }
+                        onChange={(e) => setPayment(e.target.value)}
                         placeholder="0"
                       />
-
                       <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400">
                         FCFA
                       </span>
                     </div>
-
                     <p className="mt-1.5 text-[10px] text-slate-400">
-                      Vous pouvez laisser ce champ vide si aucun paiement n'a encore été enregistré.
+                      Montant réellement remis par le client.
                     </p>
                   </div>
 
                   <div>
-                    <label className="label">
-                      Mode de paiement
-                    </label>
-
+                    <label className="label">Mode de paiement</label>
                     <select
                       className="input h-11"
                       value={method}
-                      onChange={(e) =>
-                        setMethod(
-                          e.target.value,
-                        )
-                      }
+                      onChange={(e) => {
+                        setMethod(e.target.value);
+                        if (e.target.value !== "CASH") setChangeReturned("");
+                      }}
                     >
-                      <option value="CASH">
-                        Espèces
-                      </option>
-                      <option value="ORANGE_MONEY">
-                        Orange Money
-                      </option>
-                      <option value="MTN_MONEY">
-                        MTN Money
-                      </option>
-                      <option value="MOOV_MONEY">
-                        Moov Money
-                      </option>
-                      <option value="WAVE">
-                        Wave
-                      </option>
-                      <option value="CARD">
-                        Carte
-                      </option>
-                      <option value="OTHER">
-                        Autre
-                      </option>
+                      <option value="CASH">Espèces</option>
+                      <option value="ORANGE_MONEY">Orange Money</option>
+                      <option value="MTN_MONEY">MTN Money</option>
+                      <option value="MOOV_MONEY">Moov Money</option>
+                      <option value="WAVE">Wave</option>
+                      <option value="CARD">Carte</option>
+                      <option value="OTHER">Autre</option>
                     </select>
                   </div>
                 </div>
 
-                {given > 0 &&
-                  given < total && (
-                    <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
-                      <p className="text-xs font-black text-amber-700">
-                        Paiement partiel
-                      </p>
-
-                      <p className="mt-1 text-[11px] text-amber-700">
-                        Le client a remis{" "}
-                        <strong>
-                          {fcfa(given)}
-                        </strong>
-                        . Il reste{" "}
-                        <strong>
-                          {fcfa(remaining)}
-                        </strong>{" "}
-                        à payer. Le solde sera automatiquement suivi dans <strong>Comptes</strong> comme créance client.
-                      </p>
-                    </div>
-                  )}
-
-                {given === 0 && total > 0 && clientId && (
-                  <div className="rounded-xl border border-cyan-100 bg-cyan-50 px-4 py-3">
-                    <p className="text-xs font-black text-cyan-800">Paiement à terme</p>
-                    <p className="mt-1 text-[11px] text-cyan-700">Le total sera suivi comme créance client dans <strong>Comptes</strong>.</p>
+                {given > 0 && given < total && (
+                  <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+                    <p className="text-xs font-black text-amber-700">Paiement partiel</p>
+                    <p className="mt-1 text-[11px] text-amber-700">
+                      Encaissé : <strong>{fcfa(paid)}</strong> · Reste à payer : <strong>{fcfa(remaining)}</strong>.
+                    </p>
                   </div>
                 )}
 
-                {given >= total &&
-                  total > 0 && (
-                    <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
-                      <div className="flex items-center justify-between gap-4">
-                        <div>
-                          <p className="text-[10px] font-black uppercase tracking-wide text-emerald-700">
-                            Monnaie à rendre
-                          </p>
+                {method === "CASH" && changeDue > 0 && (
+                  <div className="space-y-4 rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4">
+                    <div className="flex items-center justify-between gap-4">
+                      <div>
+                        <p className="text-[10px] font-black uppercase tracking-wide text-emerald-700">
+                          Monnaie totale due
+                        </p>
+                        <p className="mt-1 text-[11px] text-emerald-700">
+                          Le client doit recevoir {fcfa(changeDue)}.
+                        </p>
+                      </div>
+                      <strong className="text-lg font-black text-emerald-700">
+                        {fcfa(changeDue)}
+                      </strong>
+                    </div>
 
-                          <p className="mt-1 text-[11px] text-emerald-600">
-                            {change > 0
-                              ? "Le client a remis plus que le total."
-                              : "Le montant remis correspond exactement au total."}
-                          </p>
-                        </div>
-
-                        <strong className="text-lg font-black text-emerald-700">
-                          {fcfa(change)}
-                        </strong>
+                    <div>
+                      <label className="label">Monnaie remise au client</label>
+                      <div className="relative">
+                        <input
+                          className="input h-11 pr-16 text-base font-bold"
+                          type="number"
+                          min="0"
+                          max={changeDue}
+                          step="1"
+                          value={changeReturned}
+                          onChange={(e) => setChangeReturned(e.target.value)}
+                          placeholder="0"
+                        />
+                        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400">
+                          FCFA
+                        </span>
+                      </div>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          className="rounded-lg border border-emerald-200 bg-white px-3 py-1.5 text-[10px] font-bold text-emerald-700 hover:bg-emerald-50"
+                          onClick={() => setChangeReturned(String(changeDue))}
+                        >
+                          Remettre toute la monnaie
+                        </button>
+                        <button
+                          type="button"
+                          className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[10px] font-bold text-slate-600 hover:bg-slate-50"
+                          onClick={() => setChangeReturned("0")}
+                        >
+                          Ne rien remettre
+                        </button>
                       </div>
                     </div>
-                  )}
+
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      <div className="rounded-xl border border-white bg-white/80 px-3 py-2.5">
+                        <p className="text-[9px] font-black uppercase tracking-wide text-slate-400">Remise effectuée</p>
+                        <p className="mt-1 text-sm font-black text-slate-800">{fcfa(returned)}</p>
+                      </div>
+                      <div className={`rounded-xl border bg-white/80 px-3 py-2.5 ${changeRemaining > 0 ? "border-amber-200" : "border-white"}`}>
+                        <p className="text-[9px] font-black uppercase tracking-wide text-slate-400">Reste à remettre</p>
+                        <p className={`mt-1 text-sm font-black ${changeRemaining > 0 ? "text-amber-600" : "text-emerald-700"}`}>
+                          {fcfa(changeRemaining)}
+                        </p>
+                      </div>
+                    </div>
+
+                    {changeRemaining > 0 && (
+                      <p className="text-[10px] leading-5 text-amber-700">
+                        Une partie de la monnaie reste due au client. Elle devra être suivie comme montant à remettre, et non comme dépense.
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {given === 0 && total > 0 && (
+                  <div className="rounded-xl border border-cyan-100 bg-cyan-50 px-4 py-3">
+                    <p className="text-xs font-black text-cyan-800">Aucun paiement enregistré</p>
+                    <p className="mt-1 text-[11px] text-cyan-700">
+                      Le total reste à payer : <strong>{fcfa(total)}</strong>.
+                    </p>
+                  </div>
+                )}
               </div>
             </section>
           </div>
@@ -932,20 +912,26 @@ export default function NewOrder({ ctRole }: { ctRole: CTRole }) {
                   </div>
 
                   <div className="flex justify-between border-t border-slate-200 pt-3">
-                    <span className="font-bold text-slate-700">
-                      Monnaie à rendre
-                    </span>
-
-                    <b
-                      className={
-                        change > 0
-                          ? "text-emerald-600"
-                          : "text-slate-400"
-                      }
-                    >
-                      {fcfa(change)}
+                    <span className="font-bold text-slate-700">Monnaie totale due</span>
+                    <b className={changeDue > 0 ? "text-emerald-600" : "text-slate-400"}>
+                      {fcfa(changeDue)}
                     </b>
                   </div>
+
+                  {changeDue > 0 && (
+                    <>
+                      <div className="flex justify-between">
+                        <span className="text-slate-500">Monnaie remise</span>
+                        <b>{fcfa(returned)}</b>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-500">Reste à remettre</span>
+                        <b className={changeRemaining > 0 ? "text-amber-600" : "text-green-600"}>
+                          {fcfa(changeRemaining)}
+                        </b>
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 <button
@@ -954,7 +940,7 @@ export default function NewOrder({ ctRole }: { ctRole: CTRole }) {
                     saving ||
                     total <= 0 ||
                     loading ||
-                    !clientId
+                    (!clientId && !newClientMode)
                   }
                   className="mt-6 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-cyan-500 px-4 text-xs font-black text-white shadow-sm transition hover:bg-cyan-600 disabled:cursor-not-allowed disabled:opacity-50"
                 >
@@ -970,190 +956,6 @@ export default function NewOrder({ ctRole }: { ctRole: CTRole }) {
         </form>
       </div>
 
-      {/* MODAL NOUVEAU CLIENT */}
-
-      {creatingClient && (
-        <div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/40 p-4 backdrop-blur-sm"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="new-client-title"
-          onMouseDown={(e) => {
-            if (e.target === e.currentTarget) {
-              closeClientForm();
-            }
-          }}
-        >
-          <div className="w-full max-w-lg overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-              <div className="flex items-center gap-3">
-                <div className="grid size-10 place-items-center rounded-xl bg-cyan-50 text-cyan-600">
-                  <UserPlus size={18} />
-                </div>
-
-                <div>
-                  <h2
-                    id="new-client-title"
-                    className="text-sm font-black text-slate-900"
-                  >
-                    Ajouter un client
-                  </h2>
-
-                  <p className="text-[10px] text-slate-400">
-                    Le client sera automatiquement sélectionné.
-                  </p>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={closeClientForm}
-                disabled={clientSaving}
-                className="grid size-8 place-items-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 disabled:opacity-50"
-                aria-label="Fermer"
-              >
-                <X size={17} />
-              </button>
-            </div>
-
-            <form
-              onSubmit={createClient}
-              className="space-y-4 p-5"
-            >
-              <div>
-                <label className="label">
-                  Nom complet{" "}
-                  <span className="text-red-500">
-                    *
-                  </span>
-                </label>
-
-                <input
-                  className="input h-11"
-                  value={clientForm.name}
-                  onChange={(e) =>
-                    updateClient(
-                      "name",
-                      e.target.value,
-                    )
-                  }
-                  placeholder="Ex. Kouassi Jean"
-                  autoFocus
-                  required
-                />
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <label className="label">
-                    Téléphone{" "}
-                    <span className="text-[9px] font-normal normal-case text-slate-400">
-                      (facultatif)
-                    </span>
-                  </label>
-
-                  <input
-                    className="input h-11"
-                    type="tel"
-                    value={clientForm.phone}
-                    onChange={(e) =>
-                      updateClient(
-                        "phone",
-                        e.target.value,
-                      )
-                    }
-                    placeholder="07 00 00 00 00"
-                  />
-                </div>
-
-                <div>
-                  <label className="label">
-                    WhatsApp{" "}
-                    <span className="text-[9px] font-normal normal-case text-slate-400">
-                      (facultatif)
-                    </span>
-                  </label>
-
-                  <input
-                    className="input h-11"
-                    type="tel"
-                    value={clientForm.whatsapp}
-                    onChange={(e) =>
-                      updateClient(
-                        "whatsapp",
-                        e.target.value,
-                      )
-                    }
-                    placeholder="07 00 00 00 00"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="label">
-                  E-mail{" "}
-                  <span className="text-[9px] font-normal normal-case text-slate-400">
-                    (facultatif)
-                  </span>
-                </label>
-
-                <div className="relative">
-                  <Mail
-                    size={15}
-                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-                  />
-
-                  <input
-                    className="input h-11 pl-9"
-                    type="email"
-                    value={clientForm.email}
-                    onChange={(e) =>
-                      updateClient(
-                        "email",
-                        e.target.value,
-                      )
-                    }
-                    placeholder="client@exemple.com"
-                  />
-                </div>
-              </div>
-
-              <div className="rounded-xl border border-cyan-100 bg-cyan-50/60 px-3.5 py-3 text-[10px] leading-5 text-slate-500">
-                <span className="font-bold text-cyan-700">
-                  *
-                </span>{" "}
-                Le nom complet est obligatoire.
-                Les autres informations peuvent
-                être ajoutées plus tard.
-              </div>
-
-              <div className="flex justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={closeClientForm}
-                  disabled={clientSaving}
-                  className="btn"
-                >
-                  Annuler
-                </button>
-
-                <button
-                  type="submit"
-                  disabled={
-                    clientSaving ||
-                    !clientForm.name.trim()
-                  }
-                  className="btn btn-primary min-w-[140px]"
-                >
-                  {clientSaving
-                    ? "Création…"
-                    : "Créer le client"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
       {receiptData && (
         <ReceiptModal

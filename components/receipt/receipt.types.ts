@@ -38,6 +38,31 @@ export type ReceiptData = {
   paid: number;
   remaining: number;
 
+  /**
+   * Montant réellement remis par le client.
+   * Exemple : prestation 93 000 FCFA, client remet 100 000 FCFA.
+   */
   cashGiven?: number | null;
+
+  /**
+   * Montant total de la monnaie due au client.
+   * Exemple : 100 000 - 93 000 = 7 000 FCFA.
+   */
+  changeDue?: number | null;
+
+  /**
+   * Montant de monnaie effectivement rendu au client.
+   */
+  changeReturned?: number | null;
+
+  /**
+   * Montant de monnaie qui reste encore à remettre au client.
+   */
+  changeRemaining?: number | null;
+
+  /**
+   * Ancien champ conservé pour compatibilité
+   * avec les reçus existants.
+   */
   change?: number | null;
 };
