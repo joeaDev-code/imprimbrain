@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight, LogOut } from "lucide-react";
 import Logo from "@/components/ui/Logo";
 import { filterCTNavigation } from "@/components/ct/navigation";
 import { useCTStore } from "@/components/ct/ct-provider";
+import { CTOnboardingModal } from "@/components/ct/ct-onboarding-modal";
 
 export function CTShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -178,6 +179,7 @@ export function CTShell({ children }: { children: React.ReactNode }) {
         
         {children}
       </main>
+      <CTOnboardingModal />
     </div>
   );
 }

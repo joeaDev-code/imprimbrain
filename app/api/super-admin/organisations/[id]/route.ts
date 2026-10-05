@@ -92,7 +92,10 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       await tx.organization.update({ where: { id }, data });
       if (nextEmail) {
         const admin = await tx.user.findFirst({ where: { organizationId: id, role: 'ADMIN', active: true }, orderBy: { createdAt: 'asc' }, select: { id: true } });
-        if (admin) await tx.user.update({ where: { id: admin.id }, data: { email: nextEmail, emailBlindIndex: blindIndex(nextEmail, 'user.email', id) } });
+        if (admin) {
+          await tx.user.update({ where: { id: admin.id }, data: { email: nextEmail, emailBlindIndex: blindIndex(nextEmail, 'user.email', id) } });
+          await tx.session.deleteMany({ where: { userId: admin.id } });
+        }
       }
       await tx.auditLog.create({ data: { userId: user.id, organizationId: id, action: 'ORGANIZATION_UPDATED', entity: 'Organization', entityId: id, metadata: { changes } } });
     });

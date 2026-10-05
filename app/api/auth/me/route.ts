@@ -13,6 +13,7 @@ export async function GET() {
         role: user.role,
         organizationId: user.organizationId,
         mustChangePassword: user.mustChangePassword,
+        onboardingCompleted: user.onboardingCompleted,
         permissions: user.permissions.map(({ permission, allowed }) => ({ permission, allowed })),
       } : null,
     });

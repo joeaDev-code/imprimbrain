@@ -1,7 +1,7 @@
-const PRIVATE_PAGE_PREFIXES = ['/ct/', '/super-admin', '/ad/super-admin'];
+const PRIVATE_PAGE_PREFIXES = ['/ct', '/super-admin', '/ad/super-admin'] as const;
 
 export function isPrivatePagePath(pathname: string) {
-  return PRIVATE_PAGE_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+  return PRIVATE_PAGE_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
 }
 
 export function requiresSameOriginMutation(method: string, pathname: string) {

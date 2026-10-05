@@ -28,6 +28,7 @@ export async function GET() {
       where: { organizationId: user.organizationId! },
       select: stockSelect,
       orderBy: { name: 'asc' },
+      take: 500,
     });
     return NextResponse.json(rows.map(stockItemDto));
   } catch (error) {

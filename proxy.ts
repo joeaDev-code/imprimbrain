@@ -4,10 +4,13 @@ import { redirectPrivatePageWithoutSession, requiresSameOriginMutation } from '@
 
 const SESSION_COOKIE_NAME = process.env.SESSION_COOKIE_NAME || 'imprimbrain_session';
 
+/**
+ * Public pages, including /, /discover and /imp/*, stay outside the authentication boundary.
+ * This proxy is only an early routing/CSRF boundary; real authentication and RBAC remain server-side.
+ */
 export function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
-  // Cookie presence is only an early routing boundary; server layouts verify the DB session and all RBAC.
   if (redirectPrivatePageWithoutSession(pathname, request.headers.get('cookie'), SESSION_COOKIE_NAME)) {
     const login = new URL('/login', request.url);
     login.searchParams.set('next', `${pathname}${request.nextUrl.search}`);
@@ -16,12 +19,11 @@ export function proxy(request: NextRequest) {
 
   if (!requiresSameOriginMutation(request.method, pathname)) return NextResponse.next();
 
-  const allowed = isSameOriginRequest(
+  if (!isSameOriginRequest(
     request.headers.get('origin'),
     request.headers.get('referer'),
     request.nextUrl.origin,
-  );
-  if (!allowed) {
+  )) {
     return NextResponse.json({ error: 'Origine de requête invalide' }, { status: 403 });
   }
 
@@ -29,5 +31,13 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/api/:path*', '/ct', '/ct/:path*', '/super-admin', '/super-admin/:path*', '/ad/super-admin', '/ad/super-admin/:path*'],
+  matcher: [
+    '/api/:path*',
+    '/ct',
+    '/ct/:path*',
+    '/super-admin',
+    '/super-admin/:path*',
+    '/ad/super-admin',
+    '/ad/super-admin/:path*',
+  ],
 };

@@ -24,6 +24,7 @@ export async function GET() {
       where: { organizationId: user.organizationId! },
       select: serviceSelect,
       orderBy: { name: 'asc' },
+      take: 500,
     });
     return NextResponse.json(rows.map(serviceDto));
   } catch (error) {

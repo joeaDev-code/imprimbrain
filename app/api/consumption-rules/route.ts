@@ -19,6 +19,7 @@ export async function GET() {
         stockItem: { select: { name: true, unit: true } },
       },
       orderBy: { service: { name: 'asc' } },
+      take: 500,
     });
     return NextResponse.json(rows.map((row) => ({
       id: row.id,

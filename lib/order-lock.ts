@@ -10,3 +10,13 @@ export async function lockTenantOrder(transaction: RawQueryExecutor, orderId: st
   `;
   return rows.length > 0;
 }
+
+
+export async function lockTenantDebtAccount(transaction: RawQueryExecutor, debtAccountId: string, organizationId: string) {
+  const rows = await transaction.$queryRaw<{ id: string }[]>`
+    SELECT "id" FROM "DebtAccount"
+    WHERE "id"=${debtAccountId}::uuid AND "organizationId"=${organizationId}::uuid
+    FOR UPDATE
+  `;
+  return rows.length > 0;
+}

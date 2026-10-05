@@ -90,23 +90,46 @@ export async function currentUser() {
   return session.user;
 }
 
-export async function requireUser() {
+export async function requireUser(options: { allowPasswordChange?: boolean } = {}) {
   const user = await currentUser();
   if (!user) throw new Error("UNAUTHORIZED");
+  if (user.mustChangePassword && !options.allowPasswordChange) throw new Error("PASSWORD_CHANGE_REQUIRED");
   return user;
+}
+
+export async function assertOrganizationAccess(organizationId: string) {
+  const organization = await db.organization.findUnique({
+    where: { id: organizationId },
+    select: {
+      status: true,
+      subscriptions: {
+        where: { status: 'ACTIVE', expiresAt: { gt: new Date() } },
+        orderBy: { expiresAt: 'desc' },
+        take: 1,
+        select: { id: true, expiresAt: true },
+      },
+    },
+  });
+  if (!organization) throw new Error('NO_ORGANIZATION');
+  if (organization.status === 'SUSPENDED') throw new Error('ORGANIZATION_SUSPENDED');
+  if (organization.status === 'ARCHIVED') throw new Error('ORGANIZATION_ARCHIVED');
+  if (!organization.subscriptions.length) throw new Error('SUBSCRIPTION_EXPIRED');
+  return organization;
 }
 
 export async function requireOrgUser(permission?: Permission) {
   const user = await requireUser();
   if (!user.organizationId) throw new Error("NO_ORGANIZATION");
+  await assertOrganizationAccess(user.organizationId);
   if (permission && !can(user, permission)) throw new Error("FORBIDDEN");
   return user;
 }
 
-export async function requireCTUser() {
-  const user = await requireUser();
+export async function requireCTUser(options: { allowPasswordChange?: boolean } = {}) {
+  const user = await requireUser(options);
   if (!isCTRole(user.role)) throw new Error(user.role === 'SUPER_ADMIN' ? 'SUPER_ADMIN_ONLY' : 'CT_ROLE_REQUIRED');
   if (!user.organizationId) throw new Error('NO_ORGANIZATION');
+  await assertOrganizationAccess(user.organizationId);
   return {
     id: user.id,
     name: user.name,
@@ -114,6 +137,8 @@ export async function requireCTUser() {
     role: user.role,
     organizationId: user.organizationId,
     permissions: effectivePermissions(user, permissions),
+    mustChangePassword: user.mustChangePassword,
+    onboardingCompleted: user.onboardingCompleted,
   };
 }
 

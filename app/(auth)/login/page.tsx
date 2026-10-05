@@ -59,8 +59,13 @@ export default function Login() {
         throw new Error("Connexion établie mais identité impossible à vérifier.");
       }
 
+      const requestedPath = new URLSearchParams(window.location.search).get("next");
+      const safeNext = requestedPath && requestedPath.startsWith("/") && !requestedPath.startsWith("//") ? requestedPath : null;
+
       if (authenticatedUser.mustChangePassword) {
         router.replace("/change-password");
+      } else if (safeNext) {
+        router.replace(safeNext);
       } else if (authenticatedUser.role === "SUPER_ADMIN") {
         router.replace("/ad/super-admin");
       } else if (["ADMIN", "OFFICER", "SECRETARY"].includes(authenticatedUser.role) && authenticatedUser.organizationId) {

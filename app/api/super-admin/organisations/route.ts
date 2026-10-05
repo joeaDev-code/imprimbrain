@@ -35,6 +35,7 @@ export async function GET(request: NextRequest) {
       where: query ? { OR: [{ name: { contains: query, mode: 'insensitive' } }, { slug: { contains: query, mode: 'insensitive' } }] } : undefined,
       select: { id: true, name: true, slug: true, status: true, logoUrl: true, createdAt: true, _count: { select: { users: true, auditLogs: true, subscriptions: true } } },
       orderBy: { createdAt: 'desc' },
+      take: 500,
     });
     return NextResponse.json(rows.map(toOrganization));
   } catch (error) {
@@ -53,6 +54,8 @@ function formValue(form: FormData, name: string, maxLength: number) {
 export async function POST(request: Request) {
   try {
     const actor = await requireSuperAdminApi();
+    const contentLength = request.headers.get('content-length');
+    if (contentLength && Number(contentLength) > 7 * 1024 * 1024) return NextResponse.json({ error: 'Requête trop volumineuse' }, { status: 413 });
     const form = await request.formData();
     const name = formValue(form, 'name', 120);
     const slug = normalizedSlug(formValue(form, 'slug', 120));
@@ -63,13 +66,14 @@ export async function POST(request: Request) {
     const logo = form.get('logo');
     if (!slug) return NextResponse.json({ error: 'Slug invalide' }, { status: 400 });
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return NextResponse.json({ error: 'E-mail invalide' }, { status: 400 });
-    if (password.length < 8) return NextResponse.json({ error: 'Mot de passe invalide' }, { status: 400 });
+    if (password.length < 10 || password.length > 128 || !/[A-Za-z]/.test(password) || !/\d/.test(password)) return NextResponse.json({ error: 'Le mot de passe doit contenir au moins 10 caractères, une lettre et un chiffre.' }, { status: 400 });
     if (!(logo instanceof File)) return NextResponse.json({ error: 'Logo requis' }, { status: 400 });
 
     const result = await createSuperAdminOrganization(actor.id, { name, slug, email, phone, address, password, logo });
     return NextResponse.json(result, { status: 201 });
   } catch (error) {
     if (error instanceof ImageUploadError) return NextResponse.json({ error: error.message }, { status: 400 });
+    if (error instanceof Error && error.message === 'INVALID_PASSWORD') return NextResponse.json({ error: 'Mot de passe invalide.' }, { status: 400 });
     const message = error instanceof Error ? error.message : '';
     if (message === 'SLUG_EXISTS') return NextResponse.json({ error: 'Ce slug est déjà utilisé' }, { status: 409 });
     if (message === 'EMAIL_EXISTS') return NextResponse.json({ error: 'Cet e-mail est déjà utilisé' }, { status: 409 });

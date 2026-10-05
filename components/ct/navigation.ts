@@ -1,5 +1,6 @@
 import {
   Boxes,
+  WalletCards,
   ClipboardList,
   LayoutDashboard,
   Receipt,
@@ -18,6 +19,7 @@ export const ctNavigation = [
   { href: 'clients', label: 'Clients', permission: 'CLIENTS_VIEW', icon: Users },
   { href: 'services', label: 'Services', permission: 'SERVICES_VIEW', icon: Tags },
   { href: 'depenses', label: 'Dépenses', permission: 'EXPENSES_VIEW', icon: Receipt },
+  { href: 'comptes', label: 'Comptes', permission: 'ACCOUNTS_VIEW', icon: WalletCards },
   { href: 'stock', label: 'Stock', permission: 'STOCK_VIEW', icon: Boxes },
   { href: 'employes', label: 'Employés', permission: 'EMPLOYEES_VIEW', icon: UserCog },
   { href: 'audit', label: 'Journal', permission: 'AUDIT_VIEW', icon: ShieldCheck },

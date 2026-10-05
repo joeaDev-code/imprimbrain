@@ -9,7 +9,9 @@ export type CTIdentity = {
   email: string;
   role: CTRole;
   organizationId: string;
-  permissions: Permission[];
+  permissions: readonly Permission[];
+  mustChangePassword: boolean;
+  onboardingCompleted: boolean;
 };
 
 export type CTOrganization = {
@@ -28,33 +30,121 @@ export type CTStoreState = {
   role: CTRole;
   permissions: Permission[];
   organization: CTOrganization;
+  mustChangePassword: boolean;
+  onboardingCompleted: boolean;
   sidebarCollapsed: boolean;
-  setAuth: (user: CTIdentity, organization: CTOrganization) => void;
+
+  setAuth: (
+    user: CTIdentity,
+    organization: CTOrganization,
+  ) => void;
+
+  markPasswordChanged: () => void;
+
+  completeOnboarding: () => void;
+
   clearAuth: () => void;
-  hasPermission: (permission: Permission) => boolean;
+
+  hasPermission: (
+    permission: Permission,
+  ) => boolean;
+
   toggleSidebar: () => void;
 };
 
 export function createCTStore(initial: CTInitialState) {
   return createStore<CTStoreState>()((set, get) => ({
     user: initial.user,
+
     role: initial.user.role,
+
     permissions: [...initial.user.permissions],
+
+    mustChangePassword:
+      initial.user.mustChangePassword,
+
+    onboardingCompleted:
+      initial.user.onboardingCompleted,
+
     organization: initial.organization,
+
     sidebarCollapsed: false,
-    setAuth: (user, organization) => set({
-      user,
-      role: user.role,
-      permissions: [...user.permissions],
-      organization,
-    }),
-    clearAuth: () => set({
-      user: { id: '', name: '', email: '', role: 'SECRETARY', organizationId: '', permissions: [] },
-      role: 'SECRETARY',
-      permissions: [],
-      organization: { id: '', name: '', logo: null },
-    }),
-    hasPermission: (permission) => hasPermission(get().permissions, permission),
-    toggleSidebar: () => set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
+
+    setAuth: (user, organization) =>
+      set({
+        user,
+
+        role: user.role,
+
+        permissions: [...user.permissions],
+
+        mustChangePassword:
+          user.mustChangePassword,
+
+        onboardingCompleted:
+          user.onboardingCompleted,
+
+        organization,
+      }),
+
+    markPasswordChanged: () =>
+      set((state) => ({
+        user: {
+          ...state.user,
+          mustChangePassword: false,
+        },
+
+        mustChangePassword: false,
+      })),
+
+    completeOnboarding: () =>
+      set((state) => ({
+        user: {
+          ...state.user,
+          onboardingCompleted: true,
+        },
+
+        onboardingCompleted: true,
+      })),
+
+    clearAuth: () =>
+      set({
+        user: {
+          id: '',
+          name: '',
+          email: '',
+          role: 'SECRETARY',
+          organizationId: '',
+          permissions: [],
+          mustChangePassword: false,
+          onboardingCompleted: false,
+        },
+
+        role: 'SECRETARY',
+
+        permissions: [],
+
+        organization: {
+          id: '',
+          name: '',
+          logo: null,
+        },
+
+        mustChangePassword: false,
+
+        onboardingCompleted: false,
+      }),
+
+    hasPermission: (permission) =>
+      hasPermission(
+        get().permissions,
+        permission,
+      ),
+
+    toggleSidebar: () =>
+      set((state) => ({
+        sidebarCollapsed:
+          !state.sidebarCollapsed,
+      })),
   }));
 }

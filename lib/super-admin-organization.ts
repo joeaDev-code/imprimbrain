@@ -4,8 +4,7 @@ import { hashPassword } from '@/lib/password';
 import { blindIndex, encrypt, randomKey, wrapKey } from '@/lib/security';
 import { deleteStoredImage, uploadImage } from '@/lib/images/service';
 import { sendOrganizationWelcomeEmail } from '@/lib/mail/service';
-
-const INITIAL_SUBSCRIPTION_AMOUNT = 10_000;
+import { addCalendarMonths, INITIAL_SUBSCRIPTION_AMOUNT } from '@/lib/subscription-lifecycle';
 
 export type CreateOrganizationInput = {
   name: string;
@@ -17,20 +16,15 @@ export type CreateOrganizationInput = {
   logo: File;
 };
 
-function addOneCalendarMonth(date: Date) {
-  const expiration = new Date(date);
-  expiration.setMonth(expiration.getMonth() + 1);
-  return expiration;
-}
-
 export async function createSuperAdminOrganization(actorId: string, input: CreateOrganizationInput) {
+  if (input.password.length < 10 || input.password.length > 128 || !/[A-Za-z]/.test(input.password) || !/\d/.test(input.password)) throw new Error('INVALID_PASSWORD');
   if (await db.organization.findUnique({ where: { slug: input.slug }, select: { id: true } })) throw new Error('SLUG_EXISTS');
   if (await db.user.findUnique({ where: { email: input.email }, select: { id: true } })) throw new Error('EMAIL_EXISTS');
 
   const storedLogo = await uploadImage(input.logo, 'logo');
   const dataKey = randomKey();
   const startsAt = new Date();
-  const expiresAt = addOneCalendarMonth(startsAt);
+  const expiresAt = addCalendarMonths(startsAt, 1);
   const reference = `SUB-${crypto.randomUUID()}`;
 
   try {
@@ -44,7 +38,7 @@ export async function createSuperAdminOrganization(actorId: string, input: Creat
         emailBlindIndex: blindIndex(input.email, 'organization.email', organization.id),
       } });
       const administrator = await tx.user.create({ data: {
-        organizationId: organization.id, name: input.name, email: input.email, passwordHash: hashPassword(input.password), role: 'ADMIN',
+        organizationId: organization.id, name: input.name, email: input.email, passwordHash: hashPassword(input.password), role: 'ADMIN', mustChangePassword: true,
         emailBlindIndex: blindIndex(input.email, 'user.email', organization.id),
       } });
       const subscription = await tx.subscription.create({ data: {
@@ -71,6 +65,12 @@ export async function createSuperAdminOrganization(actorId: string, input: Creat
     };
   } catch (error) {
     await deleteStoredImage(storedLogo.url).catch(() => undefined);
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'P2002') {
+      const target = 'meta' in error && error.meta && typeof error.meta === 'object' && 'target' in error.meta ? error.meta.target : null;
+      const fields = Array.isArray(target) ? target.map(String) : [];
+      if (fields.includes('slug')) throw new Error('SLUG_EXISTS');
+      if (fields.includes('email')) throw new Error('EMAIL_EXISTS');
+    }
     throw error;
   }
 }

@@ -827,10 +827,17 @@ export default function NewOrder({ ctRole }: { ctRole: CTRole }) {
                         <strong>
                           {fcfa(remaining)}
                         </strong>{" "}
-                        à payer.
+                        à payer. Le solde sera automatiquement suivi dans <strong>Comptes</strong> comme créance client.
                       </p>
                     </div>
                   )}
+
+                {given === 0 && total > 0 && clientId && (
+                  <div className="rounded-xl border border-cyan-100 bg-cyan-50 px-4 py-3">
+                    <p className="text-xs font-black text-cyan-800">Paiement à terme</p>
+                    <p className="mt-1 text-[11px] text-cyan-700">Le total sera suivi comme créance client dans <strong>Comptes</strong>.</p>
+                  </div>
+                )}
 
                 {given >= total &&
                   total > 0 && (

@@ -29,7 +29,7 @@ export async function processImage(file: File, profile: ImageProfile): Promise<P
     throw new ImageUploadError('Le contenu de l’image n’est pas autorisé');
   }
 
-  const limits = profile === 'logo' ? { width: 512, height: 512, quality: 88 } : { width: 512, height: 512, quality: 88 };
+  const limits = { width: 512, height: 512, quality: 88 };
   const image = sharp(input, { limitInputPixels: 40_000_000 }).rotate().resize({
     width: limits.width,
     height: limits.height,

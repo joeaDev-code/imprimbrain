@@ -56,6 +56,24 @@ enum StockMovementKind {
   ADJUSTMENT
 }
 
+enum DebtAccountType {
+  RECEIVABLE
+  PAYABLE
+}
+
+enum DebtAccountStatus {
+  OPEN
+  PARTIAL
+  SETTLED
+  CANCELLED
+}
+
+enum DebtEntryKind {
+  DEBT
+  PAYMENT
+  ADJUSTMENT
+}
+
 enum Permission {
   DASHBOARD_VIEW
   CLIENTS_VIEW
@@ -87,6 +105,10 @@ enum Permission {
   SETTINGS_VIEW
   SETTINGS_UPDATE
   AUDIT_VIEW
+  ACCOUNTS_VIEW
+  ACCOUNTS_CREATE
+  ACCOUNTS_UPDATE
+  ACCOUNTS_PAY
 }
 
 model Organization {
@@ -98,9 +120,18 @@ model Organization {
   phoneBlindIndex  String?
   emailEncrypted   String?
   emailBlindIndex  String?
-  addressEncrypted String?
-  logoUrl          String?
-  wrappedDataKey   String
+  addressEncrypted     String?
+  whatsappEncrypted   String?
+  whatsappBlindIndex  String?
+  logoUrl              String?
+  publicProfileEnabled Boolean   @default(false)
+  publicDescription    String?
+  city                 String?
+  neighborhood         String?
+  latitude             Decimal?  @db.Decimal(9, 6)
+  longitude            Decimal?  @db.Decimal(9, 6)
+  timezone             String    @default("Africa/Abidjan")
+  wrappedDataKey       String
   createdAt        DateTime    @default(now())
   updatedAt        DateTime    @updatedAt
   users            User[]
@@ -112,8 +143,27 @@ model Organization {
   subscriptions    Subscription[]
   payments         Payment[]
   auditLogs        AuditLog[]
+  openingHours     OrganizationOpeningHour[]
+  debtAccounts     DebtAccount[]
 
   @@index([slug])
+  @@index([status, publicProfileEnabled])
+  @@index([city, publicProfileEnabled])
+}
+
+model OrganizationOpeningHour {
+  id             String       @id @default(uuid()) @db.Uuid
+  organizationId String       @db.Uuid
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  dayOfWeek      Int
+  openMinute     Int?
+  closeMinute    Int?
+  closed         Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([organizationId, dayOfWeek])
+  @@index([organizationId, dayOfWeek])
 }
 
 model User {
@@ -126,12 +176,15 @@ model User {
   role            Role             @default(SECRETARY)
   active          Boolean          @default(true)
   mustChangePassword Boolean        @default(false)
+  onboardingCompleted Boolean       @default(false)
   emailBlindIndex String?
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
   sessions        Session[]
   auditLogs       AuditLog[]
   permissions     UserPermission[]
+  debtAccounts   DebtAccount[]
+  debtEntries    DebtEntry[]
 
   @@index([organizationId, role])
   @@index([organizationId, emailBlindIndex])
@@ -174,6 +227,7 @@ model Client {
   createdAt          DateTime     @default(now())
   updatedAt          DateTime     @updatedAt
   orders             Order[]
+  debtAccounts       DebtAccount[]
 
   @@index([organizationId, name])
   @@index([organizationId, phoneBlindIndex])
@@ -245,6 +299,7 @@ model Order {
   lines          OrderLine[]
   payments       Payment[]
   stockMovements StockMovement[]
+  debtAccount   DebtAccount?
 
   @@index([organizationId, createdAt])
   @@index([organizationId, ref])
@@ -311,6 +366,51 @@ model Expense {
   createdAt      DateTime     @default(now())
 
   @@index([organizationId, spentAt])
+}
+
+model DebtAccount {
+  id                    String            @id @default(uuid()) @db.Uuid
+  organizationId       String            @db.Uuid
+  organization         Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  type                  DebtAccountType
+  status                DebtAccountStatus @default(OPEN)
+  clientId              String?           @db.Uuid
+  client                Client?           @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  orderId               String?           @unique @db.Uuid
+  order                 Order?            @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  counterpartyName      String
+  counterpartyPhoneEncrypted String?
+  counterpartyPhoneBlindIndex String?
+  label                 String
+  originalAmount        Decimal           @db.Decimal(14, 2)
+  balance               Decimal           @db.Decimal(14, 2)
+  dueAt                 DateTime?
+  noteEncrypted         String?
+  createdById           String?           @db.Uuid
+  createdBy             User?             @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+  entries               DebtEntry[]
+
+  @@index([organizationId, type, status])
+  @@index([organizationId, createdAt])
+  @@index([organizationId, dueAt])
+  @@index([organizationId, clientId])
+}
+
+model DebtEntry {
+  id            String         @id @default(uuid()) @db.Uuid
+  debtAccountId String         @db.Uuid
+  debtAccount   DebtAccount    @relation(fields: [debtAccountId], references: [id], onDelete: Cascade)
+  kind          DebtEntryKind
+  amount        Decimal        @db.Decimal(14, 2)
+  method        PaymentMethod?
+  noteEncrypted String?
+  createdById   String?        @db.Uuid
+  createdBy     User?          @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt     DateTime       @default(now())
+
+  @@index([debtAccountId, createdAt])
 }
 
 model StockMovement {

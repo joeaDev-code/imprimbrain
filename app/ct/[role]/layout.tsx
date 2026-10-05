@@ -15,7 +15,7 @@ export default async function CTLayout({
   const { role: requestedRole } = await params;
   let user;
   try {
-    user = await requireCTUser();
+    user = await requireCTUser({ allowPasswordChange: true });
   } catch (error) {
     if (error instanceof Error && error.message === 'SUPER_ADMIN_ONLY') redirect('/ad/super-admin');
     if (error instanceof Error && error.message === 'PASSWORD_CHANGE_REQUIRED') redirect('/change-password');
@@ -43,13 +43,15 @@ export default async function CTLayout({
       role: decision.role,
       organizationId,
       permissions: user.permissions,
+      mustChangePassword: user.mustChangePassword,
+      onboardingCompleted: user.onboardingCompleted,
     },
     organization: { id: organization.id, name: organization.name, logo: organization.logoUrl },
   };
 
   return (
     <CTProvider initialState={initialState}>
-      <CTShell>{children}</CTShell>
+      <CTShell>{user.mustChangePassword ? null : children}</CTShell>
     </CTProvider>
   );
 }

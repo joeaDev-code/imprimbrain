@@ -16,13 +16,12 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 
-import { LandingHeader } from "./landing-header";
 import { LandingFooter } from "./landing-footer";
 
 const features = [
   {
     icon: BarChart3,
-    title: "Pilotage en temps réel",
+    title: "Pilotage centralisé",
     text: "Visualisez vos commandes, paiements et alertes stock depuis un tableau de bord clair.",
     featured: true,
   },
@@ -123,7 +122,7 @@ const activityBars = [34, 48, 42, 66, 57, 78, 62, 88, 71, 96, 83, 108];
 export function LandingPage() {
   return (
     <main className="min-h-screen overflow-x-hidden bg-white text-[#101827]">
-      <LandingHeader />
+      
 
       {/* =========================================================
           HERO
@@ -183,7 +182,7 @@ export function LandingPage() {
 
             <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
               <a
-                href="/inscription"
+                href="/login"
                 className="inline-flex items-center justify-center rounded-full bg-[var(--primary)] px-7 py-3.5 text-sm font-bold text-white shadow-lg shadow-cyan-500/20 transition hover:-translate-y-0.5 hover:bg-[var(--primary-hover)]"
               >
                 Commencer maintenant
@@ -496,10 +495,10 @@ export function LandingPage() {
             </ul>
 
             <a
-              href="/inscription"
+              href="/login"
               className="mt-8 flex items-center justify-center gap-2 rounded-full bg-[var(--primary)] px-5 py-3.5 text-sm font-bold text-white transition hover:bg-[var(--primary-hover)]"
             >
-              Créer mon espace
+              Accéder à mon espace
               <ArrowRight className="h-4 w-4" />
             </a>
           </div>
@@ -561,7 +560,7 @@ export function LandingPage() {
             </p>
 
             <a
-              href="/inscription"
+              href="/login"
               className="mt-7 inline-flex items-center gap-2 rounded-full bg-white px-6 py-3.5 text-sm font-bold text-[var(--blue)] transition hover:bg-cyan-50"
             >
               Commencer maintenant

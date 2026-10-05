@@ -5,6 +5,7 @@ import { writeAudit } from '@/lib/domain';
 import { requireOrgUser } from '@/lib/security';
 import { canAcceptPayment } from '@/lib/order-invariants';
 import { lockTenantOrder } from '@/lib/order-lock';
+import { syncOrderReceivable } from '@/lib/accounts';
 import { readJsonBody } from '@/lib/request-json';
 
 const paymentMethods = ['CASH', 'ORANGE_MONEY', 'MTN_MONEY', 'MOOV_MONEY', 'WAVE', 'CARD', 'OTHER'];
@@ -41,6 +42,7 @@ export async function POST(request: Request) {
           data: { status: 'DELIVERED' },
         });
       }
+      await syncOrderReceivable(tx, { organizationId: user.organizationId!, orderId: order.id, userId: user.id });
       await tx.auditLog.create({
         data: {
           userId: user.id,

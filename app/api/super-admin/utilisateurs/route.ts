@@ -20,6 +20,7 @@ export async function GET() {
         _count: { select: { sessions: true } },
       },
       orderBy: { createdAt: 'desc' },
+      take: 500,
     });
     return NextResponse.json(users.map(({ role, active, mustChangePassword, _count, ...user }) => ({ ...user, platformRole: role, isActive: active, mustChangePassword, sessionsCount: _count.sessions })));
   } catch (error) {
