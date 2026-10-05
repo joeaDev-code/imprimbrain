@@ -12,13 +12,23 @@ type PublicReceiptPageProps = {
 };
 
 export const metadata = {
-  robots: { index: false, follow: false, noarchive: true },
+  robots: {
+    index: false,
+    follow: false,
+    noarchive: true,
+  },
 };
+
+export const dynamic = "force-dynamic";
 
 export default async function PublicReceiptPage({
   params,
 }: PublicReceiptPageProps) {
   const { token } = await params;
+
+  if (!token || token.length < 20) {
+    notFound();
+  }
 
   const orderId = verifyPublicReceiptToken(token);
 
@@ -26,23 +36,47 @@ export default async function PublicReceiptPage({
     notFound();
   }
 
-  const order = await db.order.findUnique({
+  const order = await db.order.findFirst({
     where: {
       id: orderId,
     },
     select: {
+      id: true,
       ref: true,
       createdAt: true,
       total: true,
+
       organization: {
-        select: { id: true, name: true, phoneEncrypted: true, emailEncrypted: true, addressEncrypted: true },
+        select: {
+          id: true,
+          name: true,
+          phoneEncrypted: true,
+          emailEncrypted: true,
+          addressEncrypted: true,
+        },
       },
-      client: { select: { name: true } },
+
+      client: {
+        select: {
+          name: true,
+        },
+      },
+
       lines: {
-        select: { label: true, quantity: true, unitPrice: true, total: true },
+        select: {
+          label: true,
+          quantity: true,
+          unitPrice: true,
+          total: true,
+        },
       },
+
       payments: {
-        select: { amount: true, method: true, paidAt: true },
+        select: {
+          amount: true,
+          method: true,
+          paidAt: true,
+        },
         orderBy: {
           paidAt: "asc",
         },
@@ -56,44 +90,28 @@ export default async function PublicReceiptPage({
 
   const organization = order.organization;
 
-  const key = await organizationKey(
-    organization.id,
-  );
+  const key = await organizationKey(organization.id);
 
   const [phone, email, address] = await Promise.all([
-    decrypt(
-      organization.phoneEncrypted,
-      key,
-    ),
-    decrypt(
-      organization.emailEncrypted,
-      key,
-    ),
-    decrypt(
-      organization.addressEncrypted,
-      key,
-    ),
+    decrypt(organization.phoneEncrypted, key),
+    decrypt(organization.emailEncrypted, key),
+    decrypt(organization.addressEncrypted, key),
   ]);
-
-  const paid = order.payments.reduce(
-    (sum, payment) =>
-      sum + Number(payment.amount),
-    0,
-  );
 
   const total = Number(order.total);
 
-  const remaining = total - paid;
+  const paid = order.payments.reduce(
+    (sum, payment) => sum + Number(payment.amount),
+    0,
+  );
 
-  const payment =
+  const safePaid = Math.min(Math.max(paid, 0), total);
+
+  const remaining = Math.max(total - safePaid, 0);
+
+  const lastPayment =
     order.payments.length > 0
-      ? {
-          amount: paid,
-          method:
-            order.payments[
-              order.payments.length - 1
-            ].method,
-        }
+      ? order.payments[order.payments.length - 1]
       : null;
 
   const receiptData = {
@@ -109,7 +127,9 @@ export default async function PublicReceiptPage({
       address,
     },
 
-    client: { name: order.client?.name || "Client" },
+    client: {
+      name: order.client?.name || "Client",
+    },
 
     lines: order.lines.map((line) => ({
       service: line.label,
@@ -120,20 +140,20 @@ export default async function PublicReceiptPage({
     })),
 
     payment: {
-      amount: paid,
-      method: payment?.method || "Non renseigné",
+      amount: safePaid,
+      method: lastPayment?.method || "Non renseigné",
     },
 
     total,
 
-    paid,
+    paid: safePaid,
 
     remaining,
   };
 
   return (
     <main className="min-h-screen bg-slate-100 px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-5xl">
+      <div className="mx-auto w-full max-w-5xl">
         <Receipt data={receiptData} />
       </div>
     </main>
