@@ -316,7 +316,7 @@ export default async function Prestations({ baseHref, ctRole }: { baseHref: stri
                         </Link>
 
                         <Link
-                          href={`${baseHref}/prestations/${order.id}/recu`}
+                          href={`${baseHref}/prestations/${order.id}`}
                           className="grid size-8 place-items-center rounded-lg border border-slate-200 bg-white text-slate-400 transition hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-600"
                         >
                           <ChevronRight size={14} />
