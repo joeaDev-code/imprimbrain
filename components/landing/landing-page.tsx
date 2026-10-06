@@ -248,7 +248,7 @@ export function LandingPage() {
 
                   <div className="overflow-hidden rounded-[18px] bg-white sm:rounded-[22px]">
                     <Image
-                      src="/images/landing/hero/dashboard-desktop.PNG"
+                      src="/images/landing/hero/dashboard-desktop.png"
                       alt="Interface Imprim’Brain sur ordinateur"
                       width={1600}
                       height={1000}
@@ -264,7 +264,7 @@ export function LandingPage() {
                 <div className="rounded-[27px] border-[7px] border-[#0b1f3a] bg-[#0b1f3a] p-1 shadow-[0_35px_90px_rgba(15,23,42,0.30)] lg:rounded-[34px] lg:border-[8px]">
                   <div className="overflow-hidden rounded-[20px] bg-white lg:rounded-[25px]">
                     <Image
-                      src="/images/landing/hero/dashboard-mobile.PNG"
+                      src="/images/landing/hero/dashboard-mobile.png"
                       alt="Interface Imprim’Brain sur mobile"
                       width={600}
                       height={1200}

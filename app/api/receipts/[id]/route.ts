@@ -49,6 +49,66 @@ export async function GET(_request: Request, { params }: RouteContext) {
     const paid = order.payments.reduce((sum, payment) => sum + Number(payment.amount), 0);
     const lastPayment = order.payments.at(-1);
 
+    const orderAudit = await db.auditLog.findFirst({
+      where: {
+        organizationId: user.organizationId!,
+        action: 'ORDER_CREATED',
+        entity: 'Order',
+        entityId: order.id,
+      },
+      orderBy: { createdAt: 'asc' },
+      select: { metadata: true },
+    });
+
+    const auditMetadata =
+      orderAudit?.metadata &&
+      typeof orderAudit.metadata === 'object' &&
+      !Array.isArray(orderAudit.metadata)
+        ? (orderAudit.metadata as Record<string, unknown>)
+        : null;
+
+    const payable = await db.debtAccount.findFirst({
+      where: {
+        organizationId: user.organizationId!,
+        type: 'PAYABLE',
+        label: `Monnaie à remettre - ${order.ref}`,
+      },
+      select: {
+        originalAmount: true,
+        balance: true,
+      },
+    });
+
+    const cashGiven =
+      typeof auditMetadata?.cashGiven === 'number'
+        ? auditMetadata.cashGiven
+        : lastPayment?.method === 'CASH' && payable
+          ? paid + Number(payable.originalAmount)
+          : lastPayment?.method === 'CASH'
+            ? paid
+            : null;
+
+    const changeDue =
+      typeof auditMetadata?.changeDue === 'number'
+        ? auditMetadata.changeDue
+        : payable
+          ? Number(payable.originalAmount)
+          : 0;
+
+    const changeReturned =
+      typeof auditMetadata?.changeReturned === 'number'
+        ? auditMetadata.changeReturned
+        : payable
+          ? Math.max(0, changeDue - Number(payable.balance))
+          : 0;
+
+    const changeRemaining =
+      typeof auditMetadata?.changeRemaining === 'number'
+        ? auditMetadata.changeRemaining
+        : payable
+          ? Number(payable.balance)
+          : Math.max(0, changeDue - changeReturned);
+
     return NextResponse.json({
       reference: order.ref,
       createdAt: order.createdAt.toISOString(),
@@ -75,6 +135,10 @@ export async function GET(_request: Request, { params }: RouteContext) {
       total: Number(order.total),
       paid,
       remaining: Number(order.total) - paid,
+      cashGiven,
+      changeDue,
+      changeReturned,
+      changeRemaining,
     });
   } catch (error) {
     return apiError(error);

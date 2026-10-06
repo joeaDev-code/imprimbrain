@@ -537,11 +537,9 @@ export default async function CTHomePage() {
           HEADER
           ========================================================= */}
 
-      <div>
-        <h1 className="text-2xl font-black text-slate-900">
-          Tableau de bord
-        </h1>
 
+      <div>
+        
         <p className="mt-1 text-xs font-medium text-slate-500 md:text-sm">
           Vue opérationnelle de votre imprimerie
         </p>

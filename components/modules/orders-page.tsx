@@ -308,7 +308,7 @@ export default async function Prestations({ baseHref, ctRole }: { baseHref: stri
                     <td>
                       <div className="flex justify-end gap-1">
                         <Link
-                          href={`${baseHref}/prestations/${order.id}/recu`}
+                          href={`${baseHref}/prestations/${order.id}`}
                           title="Voir le reçu"
                           className="grid size-8 place-items-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-600"
                         >

@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 
 export function LandingHeader() {
   return (
@@ -55,20 +56,20 @@ export function LandingHeader() {
           {/* Actions */}
           <div className="flex items-center gap-2 sm:gap-3">
             {/* Connexion */}
-            <a
+            <Link
               href="/login"
               className="hidden rounded-xl px-3.5 py-2.5 text-sm font-semibold text-slate-600 transition-all hover:bg-slate-100 hover:text-slate-950 sm:inline-flex"
             >
               Connexion
-            </a>
+            </Link>
 
             {/* Découvrir */}
-            <a
+            <Link
               href="/discover"
               className="inline-flex items-center justify-center rounded-xl border border-cyan-500 bg-cyan-500 px-4 py-2.5 text-sm font-bold text-white shadow-md shadow-cyan-500/20 transition-all duration-200 hover:-translate-y-0.5 hover:border-cyan-600 hover:bg-cyan-600 hover:shadow-lg hover:shadow-cyan-500/25 active:translate-y-0"
             >
               Découvrir
-            </a>
+            </Link>
           </div>
         </div>
       </div>

@@ -209,95 +209,112 @@ export default function NewOrder({ ctRole }: { ctRole: CTRole }) {
   }
 
   async function submit(e: React.FormEvent) {
-    e.preventDefault();
+  e.preventDefault();
 
-    const valid = lines.filter(
-      (line) => line.serviceId && line.quantity > 0,
-    );
+  const valid = lines.filter(
+    (line) => line.serviceId && line.quantity > 0,
+  );
 
-    if (!clientId && !newClientMode) {
-      toast.error("Sélectionnez un client ou activez l'ajout d'un nouveau client.");
-      return;
-    }
-
-    if (newClientMode && !clientForm.name.trim()) {
-      toast.error("Le nom du nouveau client est obligatoire.");
-      return;
-    }
-
-    if (!valid.length || total <= 0) {
-      toast.error("Ajoutez au moins un service valide.");
-      return;
-    }
-
-    if (!Number.isFinite(given) || given < 0) {
-      toast.error("La somme remise doit être un montant valide.");
-      return;
-    }
-
-    if (!Number.isFinite(returned) || returned < 0 || returned > changeDue) {
-      toast.error("La monnaie remise doit être comprise entre 0 et la monnaie due.");
-      return;
-    }
-
-    if (method !== "CASH" && (given > total || changeReturned.trim() !== "")) {
-      if (given > total) {
-        toast.error("Une monnaie ne peut être calculée que pour un paiement en espèces.");
-      } else {
-        toast.error("La monnaie remise ne concerne que les paiements en espèces.");
-      }
-      return;
-    }
-
-    try {
-      setSaving(true);
-
-      const response = await fetch("/api/orders", {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-        },
-        body: JSON.stringify({
-          clientId: newClientMode ? null : clientId || null,
-          newClient: newClientMode
-            ? {
-                name: clientForm.name.trim(),
-                phone: clientForm.phone.trim() || null,
-                whatsapp: clientForm.whatsapp.trim() || null,
-                email: clientForm.email.trim() || null,
-              }
-            : null,
-          lines: valid,
-          payment: paid,
-          method,
-          cashGiven: method === "CASH" ? given : 0,
-          changeDue,
-          changeReturned: returned,
-          changeRemaining,
-        }),
-      });
-
-      const data = await response.json().catch(() => null);
-
-      if (!response.ok) {
-        throw new Error(
-          data?.error || "Impossible d'enregistrer la prestation.",
-        );
-      }
-
-      await loadData();
-      toast.success("Prestation enregistrée.");
-      await loadReceipt(data?.id);
-    } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Une erreur est survenue.",
-      );
-    } finally {
-      setSaving(false);
-    }
+  if (!clientId && !newClientMode) {
+    toast.error("Sélectionnez un client ou activez l'ajout d'un nouveau client.");
+    return;
   }
+
+  if (newClientMode && !clientForm.name.trim()) {
+    toast.error("Le nom du nouveau client est obligatoire.");
+    return;
+  }
+
+  if (!valid.length || total <= 0) {
+    toast.error("Ajoutez au moins un service valide.");
+    return;
+  }
+
+  if (!Number.isFinite(given) || given < 0) {
+    toast.error("La somme remise doit être un montant valide.");
+    return;
+  }
+
+  if (!Number.isFinite(returned) || returned < 0 || returned > changeDue) {
+    toast.error("La monnaie remise doit être comprise entre 0 et la monnaie due.");
+    return;
+  }
+
+  if (method !== "CASH" && (given > total || changeReturned.trim() !== "")) {
+    if (given > total) {
+      toast.error("Une monnaie ne peut être calculée que pour un paiement en espèces.");
+    } else {
+      toast.error("La monnaie remise ne concerne que les paiements en espèces.");
+    }
+    return;
+  }
+
+  try {
+    setSaving(true);
+
+    const response = await fetch("/api/orders", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        clientId: newClientMode ? null : clientId || null,
+        newClient: newClientMode
+          ? {
+              name: clientForm.name.trim(),
+              phone: clientForm.phone.trim() || null,
+              whatsapp: clientForm.whatsapp.trim() || null,
+              email: clientForm.email.trim() || null,
+            }
+          : null,
+        lines: valid,
+        payment: paid,
+        method,
+        cashGiven: method === "CASH" ? given : 0,
+        changeReturned: method === "CASH" ? returned : 0,
+      }),
+    });
+
+    const data = await response.json().catch(() => null);
+
+    if (!response.ok) {
+      throw new Error(
+        data?.error || "Impossible d'enregistrer la prestation.",
+      );
+    }
+
+    // Réinitialisation du formulaire après succès
+    setClientId("");
+    setNewClientMode(false);
+    setClientForm({
+      name: "",
+      phone: "",
+      whatsapp: "",
+      email: "",
+    });
+    setLines([
+      {
+        serviceId: "",
+        quantity: 1,
+      },
+    ]);
+    setPayment("");
+    setChangeReturned("");
+    setMethod("CASH");
+
+    await loadData();
+    toast.success("Prestation enregistrée.");
+    await loadReceipt(data?.id);
+  } catch (error) {
+    toast.error(
+      error instanceof Error
+        ? error.message
+        : "Une erreur est survenue.",
+    );
+  } finally {
+    setSaving(false);
+  }
+}
 
 
   const selectedClient = clients.find(
